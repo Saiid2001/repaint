@@ -107,10 +107,21 @@ ParentBox.prototype.clone = function(parent) {
 	return clone;
 };
 
+const replaceDomLayoutBindings = function(oldBox, newBox) {
+	// Makes sure the new box has the same dom reference as the old box
+
+	newBox.domRef = oldBox.domRef;
+	oldBox.domRef.layoutBoxes.pop();
+	oldBox.domRef.layoutBoxes.push(newBox);
+}
+
 ParentBox.prototype.cloneWithLinks = function(parent) {
 	var clone = this.clone(parent);
 	clone.leftLink = this.leftLink;
 	clone.rightLink = this.rightLink;
+
+	if (this.domRef)
+	replaceDomLayoutBindings(this, clone);
 
 	return clone;
 };
@@ -200,3 +211,4 @@ ParentBox.prototype.toPx = function(value) {
 };
 
 module.exports = ParentBox;
+module.exports.replaceDomLayoutBindings = replaceDomLayoutBindings;

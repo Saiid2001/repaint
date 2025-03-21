@@ -48,8 +48,10 @@
     "xtend": "^4.0.2"
   },
   "devDependencies": {
+    "@types/jsdom": "^21.1.7",
     "brfs": "^2.0.2",
     "browserify": "^16.5.2",
+    "file-loader": "^6.2.0",
     "onchange": "^7.0.2",
     "root": "^3.2.0",
     "send": "^0.17.1",

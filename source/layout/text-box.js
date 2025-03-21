@@ -9,6 +9,10 @@ var Box = require('./box');
 var ParentBox = require('./parent-box');
 var Viewport = require('./viewport');
 
+var Auto = values.Keyword.Auto;
+var Percentage = values.Percentage;
+var Length = values.Length;
+
 var Normal = values.Keyword.Normal;
 var Nowrap = values.Keyword.Nowrap;
 var PreLine = values.Keyword.PreLine;
@@ -18,7 +22,7 @@ var NEWLINE = '\n';
 var TAB = '        ';
 
 var isBreakable = function(box) {
-	var format = box.style['white-space'];
+	var format = box.format.keyword;
 	return Normal.is(format) || PreWrap.is(format) || PreLine.is(format);
 };
 
@@ -63,7 +67,7 @@ var TextBox = function(styleOrParent, text) {
 	this.parent = parent;
 	this.text = text;
 	this.display = text;
-
+	this.format = style['white-space'];
 	this.leftLink = false;
 	this.rightLink = false;
 	this.preservedNewline = false;
@@ -74,7 +78,7 @@ util.inherits(TextBox, Box);
 TextBox.prototype.layout = function(offset, line) {
 	var parent = this.parent;
 	var style = this.style;
-	var format = style['white-space'].keyword;
+	var format = this.format.keyword;
 	var textContext = this._textContext(line);
 	var lines = breaks.hard(this.text, format);
 
@@ -150,14 +154,14 @@ TextBox.prototype.layout = function(offset, line) {
 };
 
 TextBox.prototype.endsWithCollapsibleWhitespace = function() {
-	var text = collapse(this.text, { format: this.style['white-space'].keyword });
+	var text = collapse(this.text, { format: this.format.keyword });
 	return / $/.test(text) && this._isCollapsible();
 };
 
 TextBox.prototype.collapseWhitespace = function(strip) {
 	var wh = this.endsWithCollapsibleWhitespace();
 	var text = collapse(this.text, {
-		format: this.style['white-space'].keyword,
+		format: this.format.keyword,
 		strip: strip
 	});
 
@@ -186,10 +190,32 @@ TextBox.prototype.clone = function(parent) {
 
 TextBox.prototype.cloneWithLinks = ParentBox.prototype.cloneWithLinks;
 TextBox.prototype.addLink = ParentBox.prototype.addLink;
-TextBox.prototype.toPx = ParentBox.prototype.toPx;
+
+
+
+TextBox.prototype.toPx = function(value) {
+	// modified to handle relative units like em
+
+	if(Auto.is(value)) return 0;
+	if(Percentage.is(value)) {
+		var width = this.parent.dimensions.width;
+		return width * value.percentage / 100;
+	}
+	if (Length.is(value) && value.unit === "em") {
+		var parentDomNode = this.domRef.parentNode;
+		
+		var parentLayoutBox = parentDomNode.layoutBoxes[0];
+		return value.length * TextBox.prototype.toPx.call(parentLayoutBox, parentLayoutBox.style['font-size']);
+	}
+	if (value.unit !== "px") {
+		throw new Error("Unsupported unit: " + value.unit);
+	}
+
+	return value.length;
+};
 
 TextBox.prototype._isCollapsible = function() {
-	var format = this.style['white-space'];
+	var format = this.format;
 	return Normal.is(format) || Nowrap.is(format) || PreLine.is(format);
 };
 

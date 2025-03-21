@@ -1,12 +1,12 @@
 {
 	"display": {
 		"initial": "inline",
-		"values": ["inline", "block", "none", "line-break"],
+		"values": ["inline", "block", "none", "line-break", "inline-block"],
 		"inherited": false
 	},
 	"text-align": {
 		"initial": "left",
-		"values": ["left", "center", "right"],
+		"values": ["left", "center", "right", "start", "end", "justify", "match-parent"],
 		"inherited": true
 	},
 	"color": {
@@ -36,7 +36,8 @@
 	},
 	"line-height": {
 		"initial": "1.2",
-		"values": ["<number>", "<percentage>", "<length>"],
+		"values": ["<number>", "<percentage>", "<length>", "normal"],
+		"initialKeyword": "normal",
 		"inherited": true
 	},
 	"vertical-align": {

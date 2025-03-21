@@ -79,6 +79,11 @@ Stylesheet.parse = function(str, order, priority) {
 			var order = 1;
 
 			r.declarations.forEach(function(d) {
+
+				if (d.type == 'comment') {
+					return;
+				}
+
 				var longhand = expand(d.property, d.value);
 
 				Object.keys(longhand).forEach(function(key) {
