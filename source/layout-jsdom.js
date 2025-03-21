@@ -51,9 +51,6 @@ var isBlockContainerBox = function (box) {
 
 var branch = function (ancestor, descedant) {
   var first, current;
-
-  console.log(descedant)
-
   while (descedant !== ancestor) {
     var d = descedant.clone();
     descedant.addLink(d);
@@ -234,8 +231,6 @@ module.exports = function (body, viewport) {
   }, viewport);
 
   viewport.layout();
-
-  console.log("layout-jsdom", viewport);
 
   return viewport;
 };
