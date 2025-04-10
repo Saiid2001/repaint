@@ -5,6 +5,7 @@ export interface Value {
 
     parse(str: string): Value;
     toString(): string;
+    toNumber?(): number;
     is(value: Value): boolean;
 }
 

@@ -83,6 +83,10 @@ Follows a non-exhaustive list of missing functionallity.
 - CSS media types (`@media` rule)
 - Rounded corners (CSS3 functionallity, but would be nice to have)
 
+## Saiid TODOs
+- [ ] Remove additional files that are not needed.
+- [ ] Merge `layout-jsdom.js` and `layout.js` into one file.
+
 [govett]: https://twitter.com/devongovett
 [wkjs]: https://badassjs.com/post/20294238453/webkit-js-yes-it-has-finally-happened-browser
 [toy]: https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
@@ -97,3 +101,4 @@ Follows a non-exhaustive list of missing functionallity.
 [tw]: https://kapetan.github.io/repaint-chrome/examples/text-width.html
 [pf]: https://kapetan.github.io/repaint-chrome/examples/peerflix.html
 [wiki]: https://kapetan.github.io/repaint-chrome/examples/wiki.html
+

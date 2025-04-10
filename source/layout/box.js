@@ -37,7 +37,14 @@ var Box = function(style) {
 	this.margin = new Widths();
 	this.border = new Widths();
 	this.padding = new Widths();
+
+	this.cached_computes = {};
+	this.renderIteration =0;
 };
+
+Box.prototype.afterLayout = function() {
+	this.renderIteration++;
+}
 
 Box.prototype.topWidth = function() {
 	return this.margin.top + this.border.top + this.padding.top;

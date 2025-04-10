@@ -1,213 +1,300 @@
-var util = require('util');
+var util = require("util");
 
-var Box = require('./box');
-var compute = require('../css/compute');
-var values = require('../css/values');
+var Box = require("./box");
+var compute = require("../css/compute");
+var values = require("../css/values");
 
 var Auto = values.Keyword.Auto;
 var Percentage = values.Percentage;
 
-var ParentBox = function(parent, style) {
-	Box.call(this, style);
+var ParentBox = function (parent, style) {
+  Box.call(this, style);
 
-	this.style = style || compute({}, parent.style);
-	this.parent = parent;
-	this.children = [];
+  this.style = style || compute({}, parent.style);
+  this.parent = parent;
+  this.children = [];
 
-	this.leftLink = false;
-	this.rightLink = false;
+  this.leftLink = false;
+  this.rightLink = false;
 };
 
 util.inherits(ParentBox, Box);
 
-ParentBox.prototype.layout = function() {};
-
-ParentBox.prototype.addLink = function(box) {
-	box.leftLink = true;
-	box.rightLink = this.rightLink;
-
-	this.rightLink = true;
+ParentBox.prototype.layout = function () {
+  this.afterLayout();
 };
 
-ParentBox.prototype.addLine = function(child, branch, force) {
-	this.stopEach();
+ParentBox.prototype.addLink = function (box) {
+  box.leftLink = true;
+  box.rightLink = this.rightLink;
 
-	var parent = this.parent;
-	var i = this.children.indexOf(child);
-	if(i === 0 && !branch && !force) return parent.addLine(this);
-
-	var children = this.children.slice();
-	var box = this.clone();
-
-	if(branch) box.attach(branch);
-	else box.attach(child);
-
-	for(var j = i + 1; j < children.length; j++) {
-		box.attach(children[j]);
-	}
-
-	this.addLink(box);
-	parent.addLine(this, box);
+  this.rightLink = true;
 };
 
-ParentBox.prototype.breakLine = function(child) {
-	var children = this.children.slice();
-	var box = this.clone();
-	var i = children.indexOf(child);
+ParentBox.prototype.addLine = function (child, branch, force) {
+  this.stopEach();
 
-	for(var j = i + 1; j < children.length; j++) {
-		box.attach(children[j]);
-	}
+  var parent = this.parent;
+  var i = this.children.indexOf(child);
+  if (i === 0 && !branch && !force) return parent.addLine(this);
 
-	this.addLink(box);
-	this.parent.addLine(this, box);
+  var children = this.children.slice();
+  var box = this.clone();
+
+  if (branch) box.attach(branch);
+  else box.attach(child);
+
+  for (var j = i + 1; j < children.length; j++) {
+    box.attach(children[j]);
+  }
+
+  this.addLink(box);
+  parent.addLine(this, box);
 };
 
-ParentBox.prototype.hasContent = function() {
-	var hasOutline = this.padding.some() ||
-		this.border.some() ||
-		this.margin.some();
+ParentBox.prototype.breakLine = function (child) {
+  var children = this.children.slice();
+  var box = this.clone();
+  var i = children.indexOf(child);
 
-	return hasOutline || this.children.some(function(child) {
-		return child.hasContent();
-	});
+  for (var j = i + 1; j < children.length; j++) {
+    box.attach(children[j]);
+  }
+
+  this.addLink(box);
+  this.parent.addLine(this, box);
 };
 
-ParentBox.prototype.collapseWhitespace = function(strip) {
-	this.children.forEach(function(child) {
-		strip = child.collapseWhitespace(strip);
-	});
+ParentBox.prototype.hasContent = function () {
+  var hasOutline =
+    this.padding.some() || this.border.some() || this.margin.some();
 
-	return strip;
+  return (
+    hasOutline ||
+    this.children.some(function (child) {
+      return child.hasContent();
+    })
+  );
 };
 
-ParentBox.prototype.attach = function(node, i) {
-	if(node.parent) node.parent.detach(node);
+ParentBox.prototype.collapseWhitespace = function (strip) {
+  this.children.forEach(function (child) {
+    strip = child.collapseWhitespace(strip);
+  });
 
-	node.parent = this;
-
-	if(i !== undefined) this.children.splice(i, 0, node);
-	else this.children.push(node);
+  return strip;
 };
 
-ParentBox.prototype.detach = function(node) {
-	var children = this.children;
-	var i = children.indexOf(node);
+ParentBox.prototype.attach = function (node, i) {
+  if (node.parent) node.parent.detach(node);
 
-	if(i < 0) return;
+  node.parent = this;
 
-	node.parent = null;
-	children.splice(i, 1);
+  if (i !== undefined) this.children.splice(i, 0, node);
+  else this.children.push(node);
 };
 
-ParentBox.prototype.clone = function(parent) {
-	var clone = new this.constructor(parent, this.style);
-	if(parent) parent.children.push(clone);
+ParentBox.prototype.detach = function (node) {
+  var children = this.children;
+  var i = children.indexOf(node);
 
-	return clone;
+  if (i < 0) return;
+
+  node.parent = null;
+  children.splice(i, 1);
 };
 
-const replaceDomLayoutBindings = function(oldBox, newBox) {
-	// Makes sure the new box has the same dom reference as the old box
+ParentBox.prototype.clone = function (parent) {
+  var clone = new this.constructor(parent, this.style);
+  if (parent) parent.children.push(clone);
 
-	newBox.domRef = oldBox.domRef;
-	oldBox.domRef.layoutBoxes.pop();
-	oldBox.domRef.layoutBoxes.push(newBox);
+  return clone;
+};
+
+const replaceDomLayoutBindings = function (oldBox, newBox) {
+  // Makes sure the new box has the same dom reference as the old box
+
+  newBox.domRef = oldBox.domRef;
+  oldBox.domRef.layoutBoxes.pop();
+  oldBox.domRef.layoutBoxes.push(newBox);
+};
+
+ParentBox.prototype.cloneWithLinks = function (parent) {
+  var clone = this.clone(parent);
+  clone.leftLink = this.leftLink;
+  clone.rightLink = this.rightLink;
+
+  if (this.domRef) replaceDomLayoutBindings(this, clone);
+
+  return clone;
+};
+
+ParentBox.prototype.forEach = function (fn) {
+  var children = this.children;
+  var stop = false;
+
+  this._stop = function () {
+    stop = true;
+  };
+
+  for (var i = 0; i < children.length && !stop; i++) {
+    fn(children[i], i);
+  }
+};
+
+ParentBox.prototype.stopEach = function () {
+  if (this._stop) this._stop();
+};
+
+ParentBox.prototype.translate = function (dx, dy) {
+  Box.prototype.translate.call(this, dx, dy);
+  this.translateChildren(dx, dy);
+};
+
+ParentBox.prototype.translateChildren = function (dx, dy) {
+  this.children.forEach(function (child) {
+    child.translate(dx, dy);
+  });
+};
+
+ParentBox.prototype.visibleWidth = function () {
+  if (
+    !this.cached_computes["visibleWidth"] ||
+    this.renderIteration != this.cached_computes[label].i
+  ) {
+    var min = function (box) {
+      return box.position.x - box.leftWidth();
+    };
+
+    var max = function (box) {
+      return box.position.x + box.dimensions.width + box.rightWidth();
+    };
+
+    var minX = min(this);
+    var maxX = max(this);
+
+    var width = function (parent) {
+      minX = Math.min(minX, min(parent));
+      maxX = Math.max(maxX, max(parent));
+
+      if (parent.children) parent.children.forEach(width);
+    };
+
+    this.children.forEach(width);
+    this.cached_computes["visibleWidth"] = {
+      i: this.renderIteration,
+      px: maxX - minX,
+    };
+  }
+
+  return this.cached_computes["visibleWidth"].px;
+};
+
+ParentBox.prototype.visibleHeight = function () {
+  if (
+    !this.cached_computes["visibleHeight"] ||
+    this.renderIteration != this.cached_computes[label].i
+  ) {
+    var min = function (box) {
+      return box.position.y - box.topWidth();
+    };
+
+    var max = function (box) {
+      return box.position.y + box.dimensions.height + box.bottomWidth();
+    };
+
+    var minY = min(this);
+    var maxY = max(this);
+
+    var height = function (parent) {
+      minY = Math.min(minY, min(parent));
+      maxY = Math.max(maxY, max(parent));
+
+      if (parent.children) parent.children.forEach(height);
+    };
+
+    this.children.forEach(height);
+    this.cached_computes["visibleHeight"] = {
+      i: this.renderIteration,
+      px: maxY - minY,
+    };
+  }
+  return this.cached_computes["visibleHeight"].px;
+};
+
+const computeAutoWidth = function (box) {
+  var display = box.style["display"]?.keyword;
+
+  switch (display) {
+    case "block":
+      return box.parent.dimensions.width;
+    case "inline":
+      return box.visibleWidth();
+    case "inline-block":
+      return box.visibleWidth();
+    // TODO
+    // case "flex":
+    // case "inline-flex":
+    // case "grid":
+    // case "inline-grid":
+    // case "table":
+    // case "inline-table":
+    default:
+      return box.parent.visibleWidth();
+  }
+};
+
+const computeAutoHeight = function (box) {
+  var display = box.style["display"]?.keyword;
+
+  switch (display) {
+    case "block":
+      return box.parent.dimensions.height;
+    case "inline":
+      return box.visibleHeight();
+    case "inline-block":
+      return box.visibleHeight();
+    // TODO
+    // case "flex":
+    // case "inline-flex":
+    // case "grid":
+    // case "inline-grid":
+    // case "table":
+    // case "inline-table":
+    default:
+      return box.parent.visibleHeight();
+  }
 }
 
-ParentBox.prototype.cloneWithLinks = function(parent) {
-	var clone = this.clone(parent);
-	clone.leftLink = this.leftLink;
-	clone.rightLink = this.rightLink;
 
-	if (this.domRef)
-	replaceDomLayoutBindings(this, clone);
+ParentBox.prototype.toPx = function (value, label) {
+  if (
+    !this.cached_computes[label] ||
+    this.renderIteration != this.cached_computes[label].i
+  ) {
+    var px;
+    if (Auto.is(value)) {
+      switch (label) {
+        case "width":
+          px = computeAutoWidth(this);
+          break;
+        case "height":
+          px = computeAutoHeight(this);
+          break;
+        default:
+          px = 0;
+      }
+    } else if (Percentage.is(value)) {
+      var width = this.parent.dimensions.width;
+      px = (width * value.percentage) / 100;
+    } else px = value.length;
+    this.cached_computes[label] = {
+      i: this.renderIteration,
+      px,
+    };
+  }
 
-	return clone;
-};
-
-ParentBox.prototype.forEach = function(fn) {
-	var children = this.children;
-	var stop = false;
-
-	this._stop = function() {
-		stop = true;
-	};
-
-	for(var i = 0; i < children.length && !stop; i++) {
-		fn(children[i], i);
-	}
-};
-
-ParentBox.prototype.stopEach = function() {
-	if(this._stop) this._stop();
-};
-
-ParentBox.prototype.translate = function(dx, dy) {
-	Box.prototype.translate.call(this, dx, dy);
-	this.translateChildren(dx, dy);
-};
-
-ParentBox.prototype.translateChildren = function(dx, dy) {
-	this.children.forEach(function(child) {
-		child.translate(dx, dy);
-	});
-};
-
-ParentBox.prototype.visibleWidth = function() {
-	var min = function(box) {
-		return box.position.x - box.leftWidth();
-	};
-
-	var max = function(box) {
-		return box.position.x + box.dimensions.width + box.rightWidth();
-	};
-
-	var minX = min(this);
-	var maxX = max(this);
-
-	var height = function(parent) {
-		minX = Math.min(minX, min(parent));
-		maxX = Math.max(maxX, max(parent));
-
-		if(parent.children) parent.children.forEach(height);
-	};
-
-	this.children.forEach(height);
-	return maxX - minX;
-};
-
-ParentBox.prototype.visibleHeight = function() {
-	var min = function(box) {
-		return box.position.y - box.topWidth();
-	};
-
-	var max = function(box) {
-		return box.position.y + box.dimensions.height + box.bottomWidth();
-	};
-
-	var minY = min(this);
-	var maxY = max(this);
-
-	var height = function(parent) {
-		minY = Math.min(minY, min(parent));
-		maxY = Math.max(maxY, max(parent));
-
-		if(parent.children) parent.children.forEach(height);
-	};
-
-	this.children.forEach(height);
-	return maxY - minY;
-};
-
-ParentBox.prototype.toPx = function(value) {
-	if(Auto.is(value)) return 0;
-	if(Percentage.is(value)) {
-		var width = this.parent.dimensions.width;
-		return width * value.percentage / 100;
-	}
-
-	return value.length;
+  return this.cached_computes[label].px;
 };
 
 module.exports = ParentBox;

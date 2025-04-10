@@ -20,6 +20,8 @@ LineBreakBox.prototype.layout = function(offset, line) {
 	this.position.y = parent.position.y;
 
 	parent.breakLine(this);
+
+	this.afterlayout();
 };
 
 LineBreakBox.prototype.collapseWhitespace = function() {

@@ -100,5 +100,33 @@
 	},
 	"border-right-color": "border-top-color",
 	"border-bottom-color": "border-top-color",
-	"border-left-color": "border-top-color"
+	"border-left-color": "border-top-color",
+	"border-top-left-radius": {
+		"initial": "0px",
+		"values": ["<length>"],
+		"inherited": false
+	},
+	"border-top-right-radius": "border-top-left-radius",
+	"border-bottom-right-radius": "border-top-left-radius",
+	"border-bottom-left-radius": "border-top-left-radius",
+	"opacity": {
+		"initial": "1",
+		"values": ["<number>"],
+		"inherited": false
+	},
+	"scale": {
+		"initial": "1",
+		"values": ["<number>"],
+		"inherited": false
+	},
+	"max-width": {
+		"initial": "none",
+		"values": ["<percentage>", "<length>", "none"],
+		"inherited": false
+	},
+	"z-index": {
+		"initial": "auto",
+		"values": ["auto", "<number>"],
+		"inherited": false
+	}
 }

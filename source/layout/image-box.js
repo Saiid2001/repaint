@@ -31,26 +31,28 @@ ImageBox.prototype.layout = function() {
 		width = Length.px(image.width);
 		height = Length.px(image.height);
 	} else if(isWidthAuto) {
-		width = Length.px(this.toPx(height) * ratio);
+		width = Length.px(this.toPx(height, "height") * ratio);
 	} else if(isHeightAuto) {
-		height = Length.px(this.toPx(width) / ratio);
+		height = Length.px(this.toPx(width, "width") / ratio);
 	}
 
-	this.dimensions.width = this.toPx(width);
-	this.dimensions.height = this.toPx(height);
+	this.dimensions.width = this.toPx(width, "width");
+	this.dimensions.height = this.toPx(height, "height");
 
-	this.margin.top = this.toPx(style['margin-top']);
-	this.margin.bottom = this.toPx(style['margin-bottom']);
+	this.margin.top = this.toPx(style['margin-top'], 'marginTop');
+	this.margin.bottom = this.toPx(style['margin-bottom'], 'marginBottom');
 
-	this.border.left = this.toPx(this.styledBorderWidth('left'));
-	this.border.right = this.toPx(this.styledBorderWidth('right'));
-	this.border.top = this.toPx(this.styledBorderWidth('top'));
-	this.border.bottom = this.toPx(this.styledBorderWidth('bottom'));
+	this.border.left = this.toPx(this.styledBorderWidth('left'), 'borderLeft');
+	this.border.right = this.toPx(this.styledBorderWidth('right'), 'borderRight');
+	this.border.top = this.toPx(this.styledBorderWidth('top'), 'borderTop');
+	this.border.bottom = this.toPx(this.styledBorderWidth('bottom'), 'borderBottom');
 
-	this.padding.left = this.toPx(style['padding-left']);
-	this.padding.right = this.toPx(style['padding-right']);
-	this.padding.top = this.toPx(style['padding-top']);
-	this.padding.bottom = this.toPx(style['padding-bottom']);
+	this.padding.left = this.toPx(style['padding-left'], 'paddingLeft');
+	this.padding.right = this.toPx(style['padding-right'], 'paddingRight');
+	this.padding.top = this.toPx(style['padding-top'], 'paddingTop');
+	this.padding.bottom = this.toPx(style['padding-bottom'], 'paddingBottom');
+	
+	this.afterLayout();
 };
 
 ImageBox.prototype.collapseWhitespace = function() {
@@ -84,8 +86,8 @@ InlineImageBox.prototype.layout = function(offset, line) {
 
 	var style = this.style;
 
-	this.margin.left = this.toPx(style['margin-left']);
-	this.margin.right = this.toPx(style['margin-right']);
+	this.margin.left = this.toPx(style['margin-left'], 'marginLeft');
+	this.margin.right = this.toPx(style['margin-right'], 'marginRight');
 
 	var parent = this.parent;
 	var x = parent.position.x + offset.width + this.leftWidth();
@@ -100,6 +102,8 @@ InlineImageBox.prototype.layout = function(offset, line) {
 
 	this.position.x = x;
 	this.position.y = this.baseline - this.dimensions.height - this.bottomWidth();
+
+	this.afterLayout();
 };
 
 InlineImageBox.prototype.linePosition = function() {
@@ -121,11 +125,11 @@ InlineImageBox.prototype._layoutBaseline = function() {
 	if(Length.is(alignment)) {
 		this.baseline = parent.baseline - alignment.length;
 	} else if(Percentage.is(alignment)) {
-		var size = this.toPx(style['font-size']);
+		var size = this.toPx(style['font-size'], 'fontSize');
 		var lineHeight = style['line-height'];
 
 		var lh = values.Number.is(lineHeight) ?
-			lineHeight.number * size : this.toPx(lineHeight);
+			lineHeight.number * size : this.toPx(lineHeight, 'lineHeight');
 
 		this.baseline = parent.baseline - (alignment.percentage * lh / 100);
 	}  else {
@@ -158,6 +162,8 @@ BlockImageBox.prototype.layout = function(offset) {
 
 	this._layoutWidth();
 	this._layoutPosition(offset);
+
+	this.afterLayout();
 };
 
 BlockImageBox.prototype._layoutWidth = function() {
@@ -169,15 +175,15 @@ BlockImageBox.prototype._layoutWidth = function() {
 	var marginRight = style['margin-right'];
 
 	var total = [
-		this.dimensions.width,
-		this.padding.left,
-		this.padding.right,
-		this.border.left,
-		this.border.right,
-		marginLeft,
-		marginRight
+		{width: this.dimensions.width},
+		{leftPadding: this.padding.left},
+		{paddingRight: this.padding.right},
+		{borderLeft: this.border.left},
+		{borderRight: this.border.right},
+		{marginLeft},
+		{marginRight}
 	].reduce(function(acc, v) {
-		return acc + (typeof v === 'number' ? v : self.toPx(v));
+		return acc + (typeof v === 'number' ? v : self.toPx(Object.values(v)[0], Object.keys(v)[0]));
 	}, 0);
 
 	var underflow = parent.dimensions.width - total;
@@ -191,7 +197,7 @@ BlockImageBox.prototype._layoutWidth = function() {
 	var isMarginRightAuto = Auto.is(marginRight);
 
 	if(!isMarginLeftAuto && !isMarginRightAuto) {
-		var margin = this.toPx(marginRight);
+		var margin = this.toPx(marginRight, 'marginRight');
 		marginRight = Length.px(margin + underflow);
 	} else if(!isMarginLeftAuto && isMarginRightAuto) {
 		marginRight = Length.px(underflow);
@@ -202,8 +208,8 @@ BlockImageBox.prototype._layoutWidth = function() {
 		marginRight = Length.px(underflow / 2);
 	}
 
-	this.margin.left = this.toPx(marginLeft);
-	this.margin.right = this.toPx(marginRight);
+	this.margin.left = this.toPx(marginLeft, 'marginLeft');
+	this.margin.right = this.toPx(marginRight, 'marginRight');
 };
 
 BlockImageBox.prototype._layoutPosition = function(offset) {

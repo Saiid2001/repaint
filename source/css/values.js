@@ -189,6 +189,9 @@ Color.prototype.type = Color.TYPE;
 Color.prototype.toString = function() {
 	return util.format('rgba(%s, %s, %s, %s)', this.red, this.green, this.blue, this.alpha);
 };
+Color.prototype.toNumber = function() {
+	return (this.red << 16) + (this.green << 8) + this.blue;
+}
 
 var FamilyName = define(function(name) {
 	this.name = name;

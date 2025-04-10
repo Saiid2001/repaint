@@ -29,6 +29,7 @@ BlockBox.prototype.layout = function (offset) {
   this._layoutPosition(offset);
   this._layoutChildren();
   this._layoutHeight();
+  this.afterLayout();
 };
 
 BlockBox.prototype._layoutWidth = function () {
@@ -48,15 +49,15 @@ BlockBox.prototype._layoutWidth = function () {
   var paddingRight = style["padding-right"];
 
   var total = [
-    width,
-    marginLeft,
-    marginRight,
-    borderLeft,
-    borderRight,
-    paddingLeft,
-    paddingRight,
+    {width},
+    {marginLeft},
+    {marginRight},
+    {borderLeft},
+    {borderRight},
+    {paddingLeft},
+    {paddingRight},
   ].reduce(function (acc, v) {
-    return acc + self.toPx(v);
+    return acc + self.toPx(Object.values(v)[0], Object.keys(v)[0]);
   }, 0);
 
   var underflow = parent.dimensions.width - total;
@@ -71,7 +72,7 @@ BlockBox.prototype._layoutWidth = function () {
   var isMarginRightAuto = auto(marginRight);
 
   if (!isWidthAuto && !isMarginLeftAuto && !isMarginRightAuto) {
-    var margin = this.toPx(marginRight);
+    var margin = this.toPx(marginRight, "marginRight");
     marginRight = Length.px(margin + underflow);
   } else if (!isWidthAuto && !isMarginLeftAuto && isMarginRightAuto) {
     marginRight = Length.px(underflow);
@@ -84,7 +85,7 @@ BlockBox.prototype._layoutWidth = function () {
     if (underflow >= 0) {
       width = Length.px(underflow);
     } else {
-      var margin = this.toPx(marginRight);
+      var margin = this.toPx(marginRight, "marginRight");
 
       width = Length.px(0);
       marginRight = Length.px(margin + underflow);
@@ -94,30 +95,29 @@ BlockBox.prototype._layoutWidth = function () {
     marginRight = Length.px(underflow / 2);
   }
 
-  this.dimensions.width = this.toPx(width);
+  this.dimensions.width = this.toPx(width, "width");
 
-  this.margin.left = this.toPx(marginLeft);
-  this.margin.right = this.toPx(marginRight);
+  this.margin.left = this.toPx(marginLeft, "marginLeft");
+  this.margin.right = this.toPx(marginRight, "marginRight");
 
-  this.border.left = this.toPx(borderLeft);
-  this.border.right = this.toPx(borderRight);
+  this.border.left = this.toPx(borderLeft, "borderLeft");
+  this.border.right = this.toPx(borderRight, "borderRight");
 
-  this.padding.left = this.toPx(paddingLeft);
-  this.padding.right = this.toPx(paddingRight);
+  this.padding.left = this.toPx(paddingLeft, "paddingLeft");
+  this.padding.right = this.toPx(paddingRight, "paddingRight");
 };
 
 BlockBox.prototype._layoutPosition = function (offset) {
   var parent = this.parent;
   var style = this.style;
 
-  this.margin.top = this.toPx(style["margin-top"]);
-  this.margin.bottom = this.toPx(style["margin-bottom"]);
+  this.margin.top = this.toPx(style["margin-top"], "marginTop");
+  this.margin.bottom = this.toPx(style["margin-bottom"], "marginBottom");
 
-  this.border.top = this.toPx(this.styledBorderWidth("top"));
-  this.border.bottom = this.toPx(this.styledBorderWidth("bottom"));
-
-  this.padding.top = this.toPx(style["padding-top"]);
-  this.padding.bottom = this.toPx(style["padding-bottom"]);
+  this.border.top = this.toPx(this.styledBorderWidth("top"), "borderTop");
+  this.border.bottom = this.toPx(this.styledBorderWidth("bottom"), "borderBottom"); 
+  this.padding.top = this.toPx(style["padding-top"], "paddingTop");
+  this.padding.bottom = this.toPx(style["padding-bottom"], "paddingBottom");
 
   this.position.x = parent.position.x + this.leftWidth();
   this.position.y = parent.position.y + offset.height + this.topWidth();

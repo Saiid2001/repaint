@@ -41,6 +41,8 @@ Viewport.prototype.layout = function() {
 
 	var dimensions = this.dimensions;
 	if(typeof dimensions.height !== 'number') dimensions.height = offset.height;
+
+	this.afterLayout();
 };
 
 Viewport.prototype.attach = ParentBox.prototype.attach;

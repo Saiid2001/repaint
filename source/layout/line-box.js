@@ -48,6 +48,8 @@ LineBox.prototype.layout = function(offset) {
 	this._layoutStrut();
 	this._layoutChildren();
 	this._layoutHeight();
+
+	this.afterLayout();
 };
 
 LineBox.prototype.collapseWhitespace = function() {
@@ -56,7 +58,7 @@ LineBox.prototype.collapseWhitespace = function() {
 
 LineBox.prototype._layoutStrut = function() {
 	var style = this.style;
-	var size = this.toPx(style['font-size']);
+	var size = this.toPx(style['font-size'], 'fontSize');
 	var height = textHeight({
 		size: style['font-size'].toString(),
 		family: style['font-family'].toString(),
@@ -98,7 +100,7 @@ LineBox.prototype._layoutHeight = function() {
 
 LineBox.prototype._linePosition = function() {
 	var lineHeight = this._lineHeight();
-	var size = this.toPx(this.style['font-size']);
+	var size = this.toPx(this.style['font-size'], 'fontSize');
 	var leading = (lineHeight - size) / 2;
 
 	return this.position.y - leading;
@@ -106,11 +108,11 @@ LineBox.prototype._linePosition = function() {
 
 LineBox.prototype._lineHeight = function() {
 	var style = this.style;
-	var size = this.toPx(style['font-size']);
+	var size = this.toPx(style['font-size'], 'fontSize');
 	var lineHeight = style['line-height'];
 
 	return values.Number.is(lineHeight) ?
-		lineHeight.number * size : this.toPx(lineHeight);
+		lineHeight.number * size : this.toPx(lineHeight, 'lineHeight');
 };
 
 module.exports = LineBox;
