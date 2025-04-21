@@ -8,6 +8,7 @@ var breaks = require("./whitespace/breaks");
 var Box = require("./box");
 var ParentBox = require("./parent-box");
 var Viewport = require("./viewport");
+const ImageBox = require("./image-box");
 
 var Auto = values.Keyword.Auto;
 var Percentage = values.Percentage;
@@ -22,6 +23,9 @@ var NEWLINE = "\n";
 var TAB = "        ";
 
 var isBreakable = function (box) {
+
+  if (box instanceof ImageBox) return false;
+
   var format = box.format.keyword;
   return Normal.is(format) || PreWrap.is(format) || PreLine.is(format);
 };
@@ -61,7 +65,6 @@ var TextBox = function (styleOrParent, text) {
     styleOrParent instanceof ParentBox || styleOrParent instanceof Viewport;
   var parent = isParent ? styleOrParent : null;
   var style = isParent ? styleOrParent.style : styleOrParent;
-
   text = text || "";
 
   Box.call(this, style);
@@ -222,7 +225,6 @@ TextBox.prototype.toPx = function (value, label) {
       var parentDomNode = this.domRef.parentNode.parentNode;
 
       var parentLayoutBox = parentDomNode.layoutBoxes[0];
-
       const parentPx = TextBox.prototype.toPx.call(
         parentLayoutBox,
         parentLayoutBox.style["font-size"],
@@ -231,7 +233,12 @@ TextBox.prototype.toPx = function (value, label) {
 
       px = value.length * parentPx;
 
-    } else if (value.unit !== "px") {
+    } else if (value.unit === "rem") {
+    
+      const rootFontSize = 16; //TODO: get the root font size dynamically
+      px = value.length * rootFontSize;
+    }
+    else if (value.unit !== "px") {
       throw new Error("Unsupported unit: " + value.unit);
     }
 
@@ -262,7 +269,6 @@ TextBox.prototype._textContext = function (line) {
   var precededByBreakable = false;
   var precededByEmpty = true;
   var followedByEmpty = true;
-
   for (var j = 0; j < contents.length; j++) {
     var empty = !contents[j].hasContent();
     if (j < i)

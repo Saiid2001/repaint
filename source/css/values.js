@@ -90,7 +90,7 @@ var Length = define(function(length, unit) {
 });
 
 Length.TYPE = '<length>';
-Length.UNITS = ['px', 'em'];
+Length.UNITS = ['px', 'em', 'rem'];
 
 Length.parse = function(str) {
 	var match = str.match(VALUE_WITH_UNIT);
@@ -117,6 +117,10 @@ Length.px = function(length) {
 
 Length.em = function(length) {
 	return new Length(length, 'em');
+};
+
+Length.rem = function(length) {
+	return new Length(length, 'rem');
 };
 
 Length.prototype.type = Length.TYPE;

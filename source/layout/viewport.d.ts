@@ -14,6 +14,7 @@ export declare type ViewportConf = {
 export declare class Viewport extends Box {
 
     children: Box[];
+    dimensions: { width: number, height: number };
 
     clone(): Viewport;
     layout(): void;

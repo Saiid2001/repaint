@@ -160,7 +160,7 @@ ParentBox.prototype.translateChildren = function (dx, dy) {
 ParentBox.prototype.visibleWidth = function () {
   if (
     !this.cached_computes["visibleWidth"] ||
-    this.renderIteration != this.cached_computes[label].i
+    this.renderIteration != this.cached_computes["visibleWidth"].i
   ) {
     var min = function (box) {
       return box.position.x - box.leftWidth();
@@ -193,7 +193,7 @@ ParentBox.prototype.visibleWidth = function () {
 ParentBox.prototype.visibleHeight = function () {
   if (
     !this.cached_computes["visibleHeight"] ||
-    this.renderIteration != this.cached_computes[label].i
+    this.renderIteration != this.cached_computes["visibleWidth"].i
   ) {
     var min = function (box) {
       return box.position.y - box.topWidth();

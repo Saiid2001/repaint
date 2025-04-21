@@ -1,12 +1,12 @@
 {
 	"display": {
 		"initial": "inline",
-		"values": ["inline", "block", "none", "line-break", "inline-block"],
+		"values": ["inline", "block", "none", "line-break", "inline-block", "list-item"],
 		"inherited": false
 	},
 	"text-align": {
 		"initial": "left",
-		"values": ["left", "center", "right", "start", "end", "justify", "match-parent"],
+		"values": ["left", "center", "right", "start", "end", "justify", "match-parent", "-webkit-match-parent"],
 		"inherited": true
 	},
 	"color": {
@@ -21,7 +21,7 @@
 	},
 	"font-weight": {
 		"initial": "normal",
-		"values": ["normal", "bold"],
+		"values": ["normal", "bold", "<number>"],
 		"inherited": true
 	},
 	"font-style": {
@@ -79,7 +79,7 @@
 	"padding-left": "padding-top",
 	"border-top-style": {
 		"initial": "none",
-		"values": ["none", "solid", "dashed"],
+		"values": ["none", "solid", "dashed", "dotted", "double", "groove", "ridge", "inset", "outset"],
 		"inherited": false
 	},
 	"border-right-style": "border-top-style",

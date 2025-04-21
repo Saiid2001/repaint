@@ -13,6 +13,7 @@ var TextBox = require("./layout/text-box");
 var ImageBox = require("./layout/image-box");
 
 var None = values.Keyword.None;
+var Auto = values.Keyword.Auto;
 var Block = values.Keyword.Block;
 var Inline = values.Keyword.Inline;
 var LineBreak = values.Keyword.LineBreak;
@@ -102,6 +103,7 @@ var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
                 " = " +
                 expanded[key]
             );
+            styles[key] = Auto;
             continue;
           }
 
@@ -142,7 +144,7 @@ var build = function (parent, nodes) {
       if (None.is(display)) {
         return;
       } else if (node.tagName === "IMG") {
-        var image = node.image;
+        var image = node;
 
         if (Block.is(display)) box = new ImageBox.Block(parent, style, image);
         else box = new ImageBox.Inline(parent, style, image);
@@ -154,6 +156,9 @@ var build = function (parent, nodes) {
         box = new LineBreakBox(parent, style);
       } else if (InlineBlock.is(display)) {
         box = new InlineBlockBox(parent, style);
+      } else {
+        // TODO: implement the rest of display options
+        box = new BlockBox(parent, style);
       }
 
       build(box, node.childNodes);
