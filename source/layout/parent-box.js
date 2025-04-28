@@ -6,6 +6,11 @@ var values = require("../css/values");
 
 var Auto = values.Keyword.Auto;
 var Percentage = values.Percentage;
+var Length = values.Length;
+
+var camelToKebab = function (str) {
+  return str.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
+};
 
 var ParentBox = function (parent, style) {
   Box.call(this, style);
@@ -13,6 +18,17 @@ var ParentBox = function (parent, style) {
   this.style = style || compute({}, parent.style);
   this.parent = parent;
   this.children = [];
+
+  // add a root reference
+  if (parent) {
+    if (parent.root) {
+      this.root = parent.root;
+    } else {
+      this.root = this.parent;
+    }
+  } else {
+    this.root = this;
+  }
 
   this.leftLink = false;
   this.rightLink = false;
@@ -264,8 +280,7 @@ const computeAutoHeight = function (box) {
     default:
       return box.parent.visibleHeight();
   }
-}
-
+};
 
 ParentBox.prototype.toPx = function (value, label) {
   if (
@@ -287,7 +302,47 @@ ParentBox.prototype.toPx = function (value, label) {
     } else if (Percentage.is(value)) {
       var width = this.parent.dimensions.width;
       px = (width * value.percentage) / 100;
-    } else px = value.length;
+    } else if (Length.is(value)) {
+      if (value.unit === "px") {
+        return value.length;
+      } else if (value.unit === "em") {
+        
+        if (label === "fontSize") {
+
+        var parentDomNode;
+        if (this.domRef) {
+          parentDomNode = this.domRef.parentNode;
+        } else {
+          parentDomNode = this.parent.domRef.parentNode;
+        }
+
+        var parentLayoutBox = parentDomNode.layoutBoxes[0];
+        const parentPx = ParentBox.prototype.toPx.call(
+          parentLayoutBox,
+          parentLayoutBox.style[camelToKebab(label)],
+          label
+        );
+
+
+        px = value.length * parentPx;
+      }
+      else {
+        const fontSize = this.toPx(this.style['font-size'], "fontSize");
+        px = value.length * fontSize;
+
+      }
+      } else if (value.unit === "rem") {
+        const rootValue = ParentBox.prototype.toPx.call(
+          this.root,
+          this.root.style[camelToKebab(label)],
+          label
+        );
+
+        px = value.length * rootValue;
+      } else {
+        throw new Error("Unsupported unit: " + value);
+      }
+    }
     this.cached_computes[label] = {
       i: this.renderIteration,
       px,

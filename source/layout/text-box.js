@@ -10,6 +10,24 @@ var ParentBox = require("./parent-box");
 var Viewport = require("./viewport");
 const ImageBox = require("./image-box");
 
+var camelToKebab = function (str) {
+  return str.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
+};
+
+var closestDomRef = function (box) {
+  // cache it
+  if (!box.parent.cached_computes["closestDomRef"]) {
+    if (box.domRef) box.cached_computes["closestDomRef"] = box.domRef.parentNode;
+    else if (!box.parent) box.cached_computes["closestDomRef"] = null;
+    else if (box.parent.domRef) box.cached_computes["closestDomRef"] = box.parent.domRef;
+    else box.cached_computes["closestDomRef"] = closestDomRef(box.parent);
+  }
+
+  
+
+  return box.cached_computes["closestDomRef"];
+};
+
 var Auto = values.Keyword.Auto;
 var Percentage = values.Percentage;
 var Length = values.Length;
@@ -211,34 +229,34 @@ TextBox.prototype.toPx = function (value, label) {
     var px;
     if (Auto.is(value)) px = 0;
     else if (Percentage.is(value)) {
-      var width = this.parent.dimensions.width;
-      px = (width * value.percentage) / 100;
-    } 
-    else if (Length.is(value) && value.unit === "px") {
-      return value.length
-    }
-    else if (Length.is(value) && value.unit === "em") {
+      var parentDomNode = closestDomRef(this.parent).parentNode;
+      var parentLayoutBox = parentDomNode.layoutBoxes[0];
+      const parentPx = TextBox.prototype.toPx.call(
+        parentLayoutBox,
+        parentLayoutBox.style[camelToKebab(label)],
+        label
+      );
 
+      px = (parentPx * value.percentage) / 100;
+    } else if (Length.is(value) && value.unit === "px") {
+      return value.length;
+    } else if (Length.is(value) && value.unit === "em") {
       // we fix the font size of the grandparent
 
-      
       var parentDomNode = this.domRef.parentNode.parentNode;
 
       var parentLayoutBox = parentDomNode.layoutBoxes[0];
       const parentPx = TextBox.prototype.toPx.call(
         parentLayoutBox,
-        parentLayoutBox.style["font-size"],
-        "fontSize"
+        parentLayoutBox.style[camelToKebab(label)],
+        label
       );
 
       px = value.length * parentPx;
-
     } else if (value.unit === "rem") {
-    
       const rootFontSize = 16; //TODO: get the root font size dynamically
       px = value.length * rootFontSize;
-    }
-    else if (value.unit !== "px") {
+    } else if (value.unit !== "px") {
       throw new Error("Unsupported unit: " + value.unit);
     }
 

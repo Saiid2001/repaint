@@ -128,5 +128,9 @@
 		"initial": "auto",
 		"values": ["auto", "<number>"],
 		"inherited": false
-	}
+	},
+	"-webkit-margin-before":"margin-top",
+	"-webkit-margin-after":"margin-top",
+	"-webkit-margin-start":"margin-top",
+	"-webkit-margin-end":"margin-top"
 }
