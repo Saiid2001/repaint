@@ -9,6 +9,9 @@ var Percentage = values.Percentage;
 var Length = values.Length;
 
 var camelToKebab = function (str) {
+
+  if (!str) return str;
+
   return str.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
 };
 
