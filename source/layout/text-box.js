@@ -1,5 +1,5 @@
 var util = require("util");
-var textWidth = require("text-width");
+// var textWidth = require("text-width");
 var he = require("he");
 
 var values = require("../css/values");
@@ -70,12 +70,14 @@ TextString.prototype.append = function (str) {
 TextString.prototype.width = function () {
   var style = this.style;
 
-  return textWidth(this.normalized, {
-    size: style["font-size"].toString(),
-    family: style["font-family"].toString(),
-    weight: style["font-weight"].keyword,
-    style: style["font-style"].keyword,
-  });
+  // DEV: we do not want to use the textWidth
+  return 0;
+  // return textWidth(this.normalized, {
+  //   size: style["font-size"].toString(),
+  //   family: style["font-family"].toString(),
+  //   weight: style["font-weight"].keyword,
+  //   style: style["font-style"].keyword,
+  // });
 };
 
 var TextBox = function (styleOrParent, text) {
@@ -248,14 +250,20 @@ TextBox.prototype.toPx = function (value, label) {
       var parentLayoutBox = parentDomNode.layoutBoxes[0];
       const parentPx = TextBox.prototype.toPx.call(
         parentLayoutBox,
-        parentLayoutBox.style[camelToKebab(label)],
-        label
+        parentLayoutBox.style["font-size"],
+          "fontSize"
       );
 
       px = value.length * parentPx;
     } else if (value.unit === "rem") {
-      const rootFontSize = 16; //TODO: get the root font size dynamically
-      px = value.length * rootFontSize;
+
+      const rootValue = ParentBox.prototype.toPx.call(
+        this.parent.root,
+        this.parent.root.style["font-size"],
+        "fontSize"
+      );
+
+      px = value.length * rootValue;
     } else if (value.unit !== "px") {
       throw new Error("Unsupported unit: " + value.unit);
     }

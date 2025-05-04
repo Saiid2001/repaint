@@ -13,6 +13,17 @@ var ImageBox = function(parent, style, image) {
 
 	this.parent = parent;
 	this.image = image;
+
+	// add a root reference
+	if (parent) {
+		if (parent.root) {
+		  this.root = parent.root;
+		} else {
+		  this.root = this.parent;
+		}
+	  } else {
+		this.root = this;
+	  }
 };
 
 util.inherits(ImageBox, Box);

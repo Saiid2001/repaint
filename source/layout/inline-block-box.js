@@ -91,7 +91,7 @@ InlineBox.prototype._layoutChildren = function(line) {
 };
 
 InlineBox.prototype._layoutHeight = function() {
-	this.dimensions.height = this.toPx(this.style['font-size']);
+	this.dimensions.height = this.toPx(this.style['font-size'], 'fontSize');
 };
 
 InlineBox.prototype._layoutBaseline = function() {

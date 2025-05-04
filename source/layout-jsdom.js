@@ -103,7 +103,8 @@ var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
                 " = " +
                 expanded[key]
             );
-            styles[key] = Auto;
+            styles[key] = declarations[property]?.INITIAL || Auto;
+            styles[key].specificity = 0;
             continue;
           }
 
@@ -142,11 +143,11 @@ var build = function (parent, nodes) {
       var display = style.display;
 
       if (None.is(display)) {
-        return;
+        continue;
       } else if (node.tagName === "IMG") {
         var image = node;
 
-        if (Block.is(display)) box = new ImageBox.Block(parent, style, image);
+        if (Block.is(display)) box = new ImageBox.Block(parent, style, image); 
         else box = new ImageBox.Inline(parent, style, image);
       } else if (Inline.is(display)) {
         box = new InlineBox(parent, style);
@@ -161,15 +162,15 @@ var build = function (parent, nodes) {
         box = new BlockBox(parent, style);
       }
 
+      bindDOMAndLayoutNode(node, box);
       build(box, node.childNodes);
+      
     } else if (node.nodeType === Node.TEXT_NODE) {
       box = new TextBox(parent, node.data);
-    }
-
-    if (box) {
-      parent.children.push(box);
       bindDOMAndLayoutNode(node, box);
     }
+
+    if (box) parent.children.push(box);
   }
 };
 

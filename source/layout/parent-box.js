@@ -9,7 +9,6 @@ var Percentage = values.Percentage;
 var Length = values.Length;
 
 var camelToKebab = function (str) {
-
   if (!str) return str;
 
   return str.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
@@ -309,36 +308,31 @@ ParentBox.prototype.toPx = function (value, label) {
       if (value.unit === "px") {
         return value.length;
       } else if (value.unit === "em") {
-        
         if (label === "fontSize") {
+          var parentDomNode;
+          if (this.domRef) {
+            parentDomNode = this.domRef.parentNode;
+          } else {
+            parentDomNode = this.parent.domRef.parentNode;
+          }
 
-        var parentDomNode;
-        if (this.domRef) {
-          parentDomNode = this.domRef.parentNode;
+          var parentLayoutBox = parentDomNode.layoutBoxes[0];
+          const parentPx = ParentBox.prototype.toPx.call(
+            parentLayoutBox,
+            parentLayoutBox.style[camelToKebab(label)],
+            label
+          );
+
+          px = value.length * parentPx;
         } else {
-          parentDomNode = this.parent.domRef.parentNode;
+          const fontSize = this.toPx(this.style["font-size"], "fontSize");
+          px = value.length * fontSize;
         }
-
-        var parentLayoutBox = parentDomNode.layoutBoxes[0];
-        const parentPx = ParentBox.prototype.toPx.call(
-          parentLayoutBox,
-          parentLayoutBox.style[camelToKebab(label)],
-          label
-        );
-
-
-        px = value.length * parentPx;
-      }
-      else {
-        const fontSize = this.toPx(this.style['font-size'], "fontSize");
-        px = value.length * fontSize;
-
-      }
       } else if (value.unit === "rem") {
         const rootValue = ParentBox.prototype.toPx.call(
           this.root,
-          this.root.style[camelToKebab(label)],
-          label
+          this.root.style["font-size"],
+          "fontSize"
         );
 
         px = value.length * rootValue;
