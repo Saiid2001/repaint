@@ -41,7 +41,8 @@ export default class Box {
     width(): number;
     height(): number;
     translate(dx: number, dy: number): void;
-    styledBorderWidth(direction: string): Length
+    styledBorderWidth(direction: string): Length;
+    afterLayout(): void;
 
     abstract layout(): void;
 }

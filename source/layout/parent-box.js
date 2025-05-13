@@ -310,18 +310,21 @@ ParentBox.prototype.toPx = function (value, label) {
       } else if (value.unit === "em") {
         if (label === "fontSize") {
           var parentDomNode;
+          var parentPx = 16;
           if (this.domRef) {
             parentDomNode = this.domRef.parentNode;
           } else {
             parentDomNode = this.parent.domRef.parentNode;
           }
 
-          var parentLayoutBox = parentDomNode.layoutBoxes[0];
-          const parentPx = ParentBox.prototype.toPx.call(
-            parentLayoutBox,
-            parentLayoutBox.style[camelToKebab(label)],
-            label
-          );
+          if (parentDomNode.layoutBoxes?.length) {
+            var parentLayoutBox = parentDomNode.layoutBoxes[0];
+            const parentPx = ParentBox.prototype.toPx.call(
+              parentLayoutBox,
+              parentLayoutBox.style[camelToKebab(label)],
+              label
+            );
+          }
 
           px = value.length * parentPx;
         } else {

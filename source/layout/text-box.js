@@ -17,13 +17,13 @@ var camelToKebab = function (str) {
 var closestDomRef = function (box) {
   // cache it
   if (!box.parent.cached_computes["closestDomRef"]) {
-    if (box.domRef) box.cached_computes["closestDomRef"] = box.domRef.parentNode;
+    if (box.domRef)
+      box.cached_computes["closestDomRef"] = box.domRef.parentNode;
     else if (!box.parent) box.cached_computes["closestDomRef"] = null;
-    else if (box.parent.domRef) box.cached_computes["closestDomRef"] = box.parent.domRef;
+    else if (box.parent.domRef)
+      box.cached_computes["closestDomRef"] = box.parent.domRef;
     else box.cached_computes["closestDomRef"] = closestDomRef(box.parent);
   }
-
-  
 
   return box.cached_computes["closestDomRef"];
 };
@@ -41,7 +41,6 @@ var NEWLINE = "\n";
 var TAB = "        ";
 
 var isBreakable = function (box) {
-
   if (box instanceof ImageBox) return false;
 
   var format = box.format.keyword;
@@ -221,6 +220,7 @@ TextBox.prototype.clone = function (parent) {
 TextBox.prototype.cloneWithLinks = ParentBox.prototype.cloneWithLinks;
 TextBox.prototype.addLink = ParentBox.prototype.addLink;
 
+// TODO: merge with ParentBox.toPx
 TextBox.prototype.toPx = function (value, label) {
   // modified to handle relative units like em
 
@@ -247,16 +247,18 @@ TextBox.prototype.toPx = function (value, label) {
 
       var parentDomNode = this.domRef.parentNode.parentNode;
 
-      var parentLayoutBox = parentDomNode.layoutBoxes[0];
-      const parentPx = TextBox.prototype.toPx.call(
-        parentLayoutBox,
-        parentLayoutBox.style["font-size"],
+      let parentPx = 16;
+      if (parentDomNode.layoutBoxes?.length) {
+        var parentLayoutBox = parentDomNode.layoutBoxes[0];
+        parentPx = TextBox.prototype.toPx.call(
+          parentLayoutBox,
+          parentLayoutBox.style["font-size"],
           "fontSize"
-      );
+        );
+      }
 
       px = value.length * parentPx;
     } else if (value.unit === "rem") {
-
       const rootValue = ParentBox.prototype.toPx.call(
         this.parent.root,
         this.parent.root.style["font-size"],

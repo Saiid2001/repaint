@@ -131,6 +131,13 @@ var bindDOMAndLayoutNode = function (domNode, layoutNode) {
   domNode.layoutBoxes.push(layoutNode);
 };
 
+const IGNORE_CHILDREN = {
+  SELECT: true,
+  OPTION: true,
+  SCRIPT: true,
+  STYLE: true,
+}
+
 var build = function (parent, nodes) {
   for (var node of nodes) {
     let box;
@@ -146,9 +153,10 @@ var build = function (parent, nodes) {
         continue;
       } else if (node.tagName === "IMG") {
         var image = node;
-
-        if (Block.is(display)) box = new ImageBox.Block(parent, style, image); 
+        if (Block.is(display)) box = new ImageBox.Block(parent, style, image);
         else box = new ImageBox.Inline(parent, style, image);
+      } else if (node.tagName === "BR") {
+        box = new LineBreakBox(parent, style);
       } else if (Inline.is(display)) {
         box = new InlineBox(parent, style);
       } else if (Block.is(display)) {
@@ -161,10 +169,13 @@ var build = function (parent, nodes) {
         // TODO: implement the rest of display options
         box = new BlockBox(parent, style);
       }
-
       bindDOMAndLayoutNode(node, box);
-      build(box, node.childNodes);
-      
+
+      if (!IGNORE_CHILDREN[node.tagName]) {
+        if (node.childNodes.length) {
+          build(box, node.childNodes);
+        }
+      }
     } else if (node.nodeType === Node.TEXT_NODE) {
       box = new TextBox(parent, node.data);
       bindDOMAndLayoutNode(node, box);

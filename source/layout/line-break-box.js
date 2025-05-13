@@ -13,6 +13,8 @@ var LineBreakBox = function(parent, style) {
 
 util.inherits(LineBreakBox, Box);
 
+LineBreakBox.prototype.afterlayout = Box.prototype.afterLayout;
+
 LineBreakBox.prototype.layout = function(offset, line) {
 	var parent = this.parent;
 
