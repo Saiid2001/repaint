@@ -11,6 +11,7 @@ var InlineBox = require("./layout/inline-box");
 var InlineBlockBox = require("./layout/inline-block-box");
 var TextBox = require("./layout/text-box");
 var ImageBox = require("./layout/image-box");
+const { implSymbol } = require("jsdom");
 
 var None = values.Keyword.None;
 var Auto = values.Keyword.Auto;
@@ -208,6 +209,11 @@ var blocks = function (parent, boxes, ancestor) {
       parent = blocks(box, child.children, a) || parent;
     }
   });
+
+  // copy the isDirty field from parent to resume
+  if (resume != parent && parent?.domRef?.[implSymbol]?.isDirty) {
+    if (resume?.domRef) resume.domRef[implSymbol].isDirty = true;
+  }
 
   return resume;
 };

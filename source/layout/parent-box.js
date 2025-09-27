@@ -126,6 +126,8 @@ ParentBox.prototype.clone = function (parent) {
   var clone = new this.constructor(parent, this.style);
   if (parent) parent.children.push(clone);
 
+  if (this.domRef) replaceDomLayoutBindings(this, clone);
+
   return clone;
 };
 
