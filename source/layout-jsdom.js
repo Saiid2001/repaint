@@ -70,6 +70,110 @@ var branch = function (ancestor, descedant) {
   return first;
 };
 
+var DEFAULT_FONT_SIZE = 16;
+
+// The root element's computed font size, which rem resolves against. Seeded per
+// layout pass from <html>, which is above the <body> layout starts at.
+var rootFontSize = DEFAULT_FONT_SIZE;
+
+// CSS absolute-size keywords, in px for a medium of 16.
+var ABSOLUTE_FONT_SIZES = {
+  "xx-small": 9,
+  "x-small": 10,
+  small: 13,
+  medium: 16,
+  large: 18,
+  "x-large": 24,
+  "xx-large": 32,
+};
+
+// Relative-size keywords scale the parent's size by roughly 1.2.
+var RELATIVE_FONT_SIZE_RATIO = 1.2;
+
+var keywordToPx = function (specified, parentPx) {
+  if (!specified) return null;
+
+  var keyword = String(specified).trim().toLowerCase();
+
+  if (ABSOLUTE_FONT_SIZES[keyword] !== undefined) {
+    return ABSOLUTE_FONT_SIZES[keyword];
+  }
+  if (keyword === "larger") return parentPx * RELATIVE_FONT_SIZE_RATIO;
+  if (keyword === "smaller") return parentPx / RELATIVE_FONT_SIZE_RATIO;
+
+  return null;
+};
+
+var lengthToPx = function (value, relativeTo) {
+  if (values.Percentage.is(value)) {
+    return (relativeTo * value.percentage) / 100;
+  }
+
+  if (values.Length.is(value)) {
+    if (value.unit === "px") return value.length;
+    if (value.unit === "em") return value.length * relativeTo;
+    if (value.unit === "rem") return value.length * rootFontSize;
+  }
+
+  return null;
+};
+
+/**
+ * CSS resolves font-size at computed-value time, so the computed value is
+ * always an absolute length and layout never sees em/rem/%. Browsers do this
+ * while computing style; jsdom's getComputedStyle returns the specified value
+ * instead (and nothing at all when the property is inherited), so it has to
+ * happen here — top-down, where the parent's resolved size is known.
+ */
+var resolveFontSize = function (styles, parentStyles, specified) {
+  var parentValue = parentStyles && parentStyles["font-size"];
+  var parentPx =
+    parentValue && values.Length.is(parentValue) && parentValue.unit === "px"
+      ? parentValue.length
+      : DEFAULT_FONT_SIZE;
+
+  var value = styles["font-size"];
+  // An unspecified font-size inherits the parent's computed value. Keywords are
+  // checked first: they never survive the length parser.
+  var px = keywordToPx(specified, parentPx);
+
+  if (px === null) {
+    px = value ? lengthToPx(value, parentPx) : parentPx;
+  }
+
+  if (px === null || !isFinite(px)) {
+    px = parentPx;
+  }
+
+  var resolved = values.Length.px(px);
+  resolved.specificity = value ? value.specificity : 0;
+  styles["font-size"] = resolved;
+};
+
+/**
+ * rem resolves against the root element, which is never laid out because layout
+ * starts at <body>. Its own font-size resolves against the 16px initial value.
+ */
+var computeRootFontSize = function (body) {
+  var documentElement = body.ownerDocument.documentElement;
+  var window =
+    body.ownerDocument.defaultView || body.ownerDocument.parentWindow;
+
+  if (!documentElement || !window) {
+    return DEFAULT_FONT_SIZE;
+  }
+
+  var specified = window.getComputedStyle(documentElement).fontSize;
+  if (!specified) {
+    return DEFAULT_FONT_SIZE;
+  }
+
+  var parsed = declarations["font-size"]?.parseValue(specified);
+  var px = parsed ? lengthToPx(parsed, DEFAULT_FONT_SIZE) : null;
+
+  return px === null || !isFinite(px) ? DEFAULT_FONT_SIZE : px;
+};
+
 var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
   var styles = {};
 
@@ -119,14 +223,23 @@ var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
     }
   }
 
+  resolveFontSize(styles, parentStyle, style.fontSize);
+
   return styles;
 };
+
+var layoutPass = 0;
 
 var bindDOMAndLayoutNode = function (domNode, layoutNode) {
   layoutNode.domRef = domNode;
 
-  if (!domNode.layoutBoxes) {
+  // A single pass can bind several boxes to one node (inline fragments), but
+  // boxes from earlier passes are stale: readers index layoutBoxes[0] and
+  // expect the current pass. Rerendering keeps the same DOM nodes, so the
+  // bindings have to be dropped when a new pass reaches the node.
+  if (!domNode.layoutBoxes || domNode.layoutPass !== layoutPass) {
     domNode.layoutBoxes = [];
+    domNode.layoutPass = layoutPass;
   }
 
   domNode.layoutBoxes.push(layoutNode);
@@ -243,6 +356,9 @@ var lines = function (parent, boxes) {
 };
 
 module.exports = function (body, viewport) {
+  layoutPass++;
+  rootFontSize = computeRootFontSize(body);
+
   viewport = new Viewport(viewport.position, viewport.dimensions);
 
   build(viewport, [body]);
