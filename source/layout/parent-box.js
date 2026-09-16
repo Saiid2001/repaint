@@ -304,8 +304,15 @@ ParentBox.prototype.toPx = function (value, label) {
           px = 0;
       }
     } else if (Percentage.is(value)) {
-      var width = this.parent.dimensions.width;
-      px = (width * value.percentage) / 100;
+      if (label === "fontSize") {
+        // A font-size percentage is relative to the parent's font size, never
+        // to the containing block. Resolving it against the width produced
+        // font sizes as large as the viewport.
+        px = (this.toPx(this.style["font-size"], "fontSize") * value.percentage) / 100;
+      } else {
+        var width = this.parent.dimensions.width;
+        px = (width * value.percentage) / 100;
+      }
     } else if (Length.is(value)) {
       if (value.unit === "px") {
         return value.length;
@@ -321,7 +328,9 @@ ParentBox.prototype.toPx = function (value, label) {
 
           if (parentDomNode.layoutBoxes?.length) {
             var parentLayoutBox = parentDomNode.layoutBoxes[0];
-            const parentPx = ParentBox.prototype.toPx.call(
+            // Assigns the outer parentPx; declaring it here shadowed the 16px
+            // default and discarded this result.
+            parentPx = ParentBox.prototype.toPx.call(
               parentLayoutBox,
               parentLayoutBox.style[camelToKebab(label)],
               label

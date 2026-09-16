@@ -15,8 +15,10 @@ var camelToKebab = function (str) {
 };
 
 var closestDomRef = function (box) {
-  // cache it
-  if (!box.parent.cached_computes["closestDomRef"]) {
+  // Guard on this box's own cache: reading the parent's both checked an entry
+  // this function never writes and dereferenced box.parent before the
+  // parentless-root case below could handle it.
+  if (!box.cached_computes["closestDomRef"]) {
     if (box.domRef)
       box.cached_computes["closestDomRef"] = box.domRef.parentNode;
     else if (!box.parent) box.cached_computes["closestDomRef"] = null;
@@ -231,13 +233,23 @@ TextBox.prototype.toPx = function (value, label) {
     var px;
     if (Auto.is(value)) px = 0;
     else if (Percentage.is(value)) {
-      var parentDomNode = closestDomRef(this.parent).parentNode;
-      var parentLayoutBox = parentDomNode.layoutBoxes[0];
-      const parentPx = TextBox.prototype.toPx.call(
-        parentLayoutBox,
-        parentLayoutBox.style[camelToKebab(label)],
-        label
-      );
+      // The ancestor chain runs out at the layout root: closestDomRef returns
+      // null for a parentless box, and <html> sits above the <body> layout
+      // starts from, so it is never given a box. Resolve against the default
+      // font size once that happens, as the em branch does.
+      var closestRef = this.parent ? closestDomRef(this.parent) : null;
+      var parentDomNode = closestRef ? closestRef.parentNode : null;
+      var parentLayoutBox = parentDomNode?.layoutBoxes?.[0];
+
+      let parentPx = 16;
+
+      if (parentLayoutBox) {
+        parentPx = TextBox.prototype.toPx.call(
+          parentLayoutBox,
+          parentLayoutBox.style[camelToKebab(label)],
+          label
+        );
+      }
 
       px = (parentPx * value.percentage) / 100;
     } else if (Length.is(value) && value.unit === "px") {
