@@ -18,6 +18,29 @@
 		],
 		"inherited": false
 	},
+	"float": {
+		"initial": "none",
+		"values": [
+			"none",
+			"left",
+			"right",
+			"inline-start",
+			"inline-end"
+		],
+		"inherited": false
+	},
+	"clear": {
+		"initial": "none",
+		"values": [
+			"none",
+			"left",
+			"right",
+			"both",
+			"inline-start",
+			"inline-end"
+		],
+		"inherited": false
+	},
 	"text-align": {
 		"initial": "left",
 		"values": [
