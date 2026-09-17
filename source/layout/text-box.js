@@ -8,6 +8,8 @@ var breaks = require("./whitespace/breaks");
 var Box = require("./box");
 var ParentBox = require("./parent-box");
 var Viewport = require("./viewport");
+var rootFontSize = require("./root-font-size");
+var textMeasure = require("./text-measure");
 const ImageBox = require("./image-box");
 
 var camelToKebab = function (str) {
@@ -69,16 +71,9 @@ TextString.prototype.append = function (str) {
 };
 
 TextString.prototype.width = function () {
-  var style = this.style;
-
-  // DEV: we do not want to use the textWidth
-  return 0;
-  // return textWidth(this.normalized, {
-  //   size: style["font-size"].toString(),
-  //   family: style["font-family"].toString(),
-  //   weight: style["font-weight"].keyword,
-  //   style: style["font-style"].keyword,
-  // });
+  // Measured by the embedder's font engine; zero when none is installed, which
+  // leaves every inline box zero wide and stacked at the same position.
+  return textMeasure.measure(this.normalized, this.style);
 };
 
 var TextBox = function (styleOrParent, text) {
@@ -271,11 +266,8 @@ TextBox.prototype.toPx = function (value, label) {
 
       px = value.length * parentPx;
     } else if (value.unit === "rem") {
-      const rootValue = ParentBox.prototype.toPx.call(
-        this.parent.root,
-        this.parent.root.style["font-size"],
-        "fontSize"
-      );
+      // The root element, not the viewport box.
+      const rootValue = rootFontSize.get();
 
       px = value.length * rootValue;
     } else if (value.unit !== "px") {

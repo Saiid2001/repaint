@@ -3,6 +3,7 @@ var util = require("util");
 var Box = require("./box");
 var compute = require("../css/compute");
 var values = require("../css/values");
+var rootFontSize = require("./root-font-size");
 
 var Auto = values.Keyword.Auto;
 var Percentage = values.Percentage;
@@ -310,8 +311,16 @@ ParentBox.prototype.toPx = function (value, label) {
         // font sizes as large as the viewport.
         px = (this.toPx(this.style["font-size"], "fontSize") * value.percentage) / 100;
       } else {
-        var width = this.parent.dimensions.width;
-        px = (width * value.percentage) / 100;
+        // CSS 2.1 10.4 and 10.6: height, top and bottom percentages resolve
+        // against the containing block's height. Everything else, including
+        // vertical margins and padding, resolves against its width.
+        var vertical =
+          label === "height" || label === "top" || label === "bottom";
+        var basis = vertical
+          ? this.parent.dimensions.height
+          : this.parent.dimensions.width;
+
+        px = (basis * value.percentage) / 100;
       }
     } else if (Length.is(value)) {
       if (value.unit === "px") {
@@ -343,11 +352,9 @@ ParentBox.prototype.toPx = function (value, label) {
           px = value.length * fontSize;
         }
       } else if (value.unit === "rem") {
-        const rootValue = ParentBox.prototype.toPx.call(
-          this.root,
-          this.root.style["font-size"],
-          "fontSize"
-        );
+        // The root element, not the viewport box, which has no relation to the
+        // document's font size.
+        const rootValue = rootFontSize.get();
 
         px = value.length * rootValue;
       } else {

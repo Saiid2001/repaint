@@ -10,6 +10,7 @@ var LineBreakBox = require("./layout/line-break-box");
 var InlineBox = require("./layout/inline-box");
 var InlineBlockBox = require("./layout/inline-block-box");
 var TextBox = require("./layout/text-box");
+var sharedRootFontSize = require("./layout/root-font-size");
 var ImageBox = require("./layout/image-box");
 const { implSymbol } = require("jsdom");
 
@@ -250,6 +251,14 @@ const IGNORE_CHILDREN = {
   OPTION: true,
   SCRIPT: true,
   STYLE: true,
+  // Scripting is enabled here, so a noscript element's contents are not markup
+  // at all: the parser leaves them as one text node, which was being painted as
+  // a line of raw HTML across the top of the page.
+  NOSCRIPT: true,
+  TEMPLATE: true,
+  TITLE: true,
+  META: true,
+  LINK: true,
 }
 
 var build = function (parent, nodes) {
@@ -357,7 +366,11 @@ var lines = function (parent, boxes) {
 
 module.exports = function (body, viewport) {
   layoutPass++;
+
+  // Published before anything is laid out: rem lengths resolve against it in
+  // both toPx implementations, which have no other way to reach <html>.
   rootFontSize = computeRootFontSize(body);
+  sharedRootFontSize.set(rootFontSize);
 
   viewport = new Viewport(viewport.position, viewport.dimensions);
 

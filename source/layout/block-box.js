@@ -134,16 +134,14 @@ BlockBox.prototype._layoutChildren = function () {
 };
 
 BlockBox.prototype._layoutHeight = function () {
-  var parent = this.parent;
   var height = this.style.height;
-  var parentHeight = parent.style.height;
 
-  if (Length.is(height)) {
-    this.dimensions.height = height.length;
-  } else if (Percentage.is(height) && Length.is(parentHeight)) {
-    this.dimensions.height = (parentHeight.length * height.percentage) / 100;
-  } 
-
+  // Mirrors _layoutWidth. Reading Length.length took the bare number and so
+  // treated every unit as pixels, leaving a 32.5rem box 32.5px tall; toPx
+  // applies the unit and resolves a percentage against the containing block.
+  if (Length.is(height) || Percentage.is(height)) {
+    this.dimensions.height = this.toPx(height, "height");
+  }
 };
 
 module.exports = BlockBox;

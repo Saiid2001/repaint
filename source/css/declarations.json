@@ -299,7 +299,7 @@
 		"inherited": false
 	},
 	"justify-content": {
-		"initial": "flex-start", 
+		"initial": "flex-start",
 		"values": [
 			"flex-start",
 			"flex-end",
@@ -332,5 +332,145 @@
 			"sticky"
 		],
 		"inherited": false
+	},
+	"top": {
+		"initial": "auto",
+		"values": [
+			"<percentage>",
+			"<length>",
+			"auto"
+		],
+		"inherited": false
+	},
+	"right": {
+		"initial": "auto",
+		"values": [
+			"<percentage>",
+			"<length>",
+			"auto"
+		],
+		"inherited": false
+	},
+	"bottom": {
+		"initial": "auto",
+		"values": [
+			"<percentage>",
+			"<length>",
+			"auto"
+		],
+		"inherited": false
+	},
+	"left": {
+		"initial": "auto",
+		"values": [
+			"<percentage>",
+			"<length>",
+			"auto"
+		],
+		"inherited": false
+	},
+	"min-width": {
+		"initial": "auto",
+		"values": [
+			"<percentage>",
+			"<length>",
+			"auto"
+		],
+		"inherited": false
+	},
+	"min-height": {
+		"initial": "auto",
+		"values": [
+			"<percentage>",
+			"<length>",
+			"auto"
+		],
+		"inherited": false
+	},
+	"max-height": {
+		"initial": "none",
+		"values": [
+			"<percentage>",
+			"<length>",
+			"none"
+		],
+		"inherited": false
+	},
+	"gap": {
+		"initial": "0px",
+		"values": [
+			"<percentage>",
+			"<length>",
+			"normal"
+		],
+		"inherited": false
+	},
+	"row-gap": {
+		"initial": "0px",
+		"values": [
+			"<percentage>",
+			"<length>",
+			"normal"
+		],
+		"inherited": false
+	},
+	"column-gap": {
+		"initial": "0px",
+		"values": [
+			"<percentage>",
+			"<length>",
+			"normal"
+		],
+		"inherited": false
+	},
+	"box-sizing": {
+		"initial": "content-box",
+		"values": [
+			"content-box",
+			"border-box"
+		],
+		"inherited": false
+	},
+	"overflow": {
+		"initial": "visible",
+		"values": [
+			"visible",
+			"hidden",
+			"scroll",
+			"auto",
+			"clip"
+		],
+		"inherited": false
+	},
+	"overflow-x": {
+		"initial": "visible",
+		"values": [
+			"visible",
+			"hidden",
+			"scroll",
+			"auto",
+			"clip"
+		],
+		"inherited": false
+	},
+	"overflow-y": {
+		"initial": "visible",
+		"values": [
+			"visible",
+			"hidden",
+			"scroll",
+			"auto",
+			"clip"
+		],
+		"inherited": false
+	},
+	"visibility": {
+		"initial": "visible",
+		"values": [
+			"visible",
+			"hidden",
+			"collapse"
+		],
+		"inherited": true
 	}
 }
