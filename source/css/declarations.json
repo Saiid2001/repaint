@@ -12,7 +12,9 @@
 			"table",
 			"table-row",
 			"table-cell",
-			"table-row-group"
+			"table-row-group",
+			"grid",
+			"inline-grid"
 		],
 		"inherited": false
 	},
