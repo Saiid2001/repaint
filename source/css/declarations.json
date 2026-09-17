@@ -113,7 +113,8 @@
 	"background-color": {
 		"initial": "rgba(0, 0, 0, 0)",
 		"values": [
-			"<color>"
+			"<color>",
+			"currentColor"
 		],
 		"inherited": false
 	},
