@@ -201,6 +201,27 @@ var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
             console.warn("CSS Mapping: Unknown property: " + key);
             continue;
           }
+
+          // css-cascade-4: the CSS-wide keywords are not values of the property
+          // and no property's own parser accepts them. Passing them through left
+          // a literal "inherit" sitting where a keyword was expected, and the
+          // text renderer built a font string out of it that the canvas then
+          // rejected, silently falling back to its default size: whole runs of
+          // text painted at 10px inside boxes measured for 16.
+          var wide = String(expanded[key]).trim().toLowerCase();
+
+          if (wide === "inherit" || wide === "initial" || wide === "unset" ||
+            wide === "revert" || wide === "revert-layer") {
+            var takesParent = wide === "inherit" ||
+              ((wide === "unset" || wide === "revert" || wide === "revert-layer") &&
+                declarations[key].INHERITED);
+            var inheritedValue = takesParent && parentStyle ? parentStyle[key] : null;
+
+            styles[key] = inheritedValue || declarations[key].INITIAL;
+            styles[key].specificity = specificity;
+            continue;
+          }
+
           var value = declarations[key].parseValue(expanded[key], parentStyle);
           if (!value) {
             console.warn(
@@ -219,6 +240,11 @@ var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
         }
       }
     } else if (declarations[property]) {
+      // An inherited property with no declaration of its own should take the
+      // parent's computed value rather than the initial one, but the parent's
+      // value can still hold a relative unit, and re-resolving it here reaches
+      // for a conversion the box does not have. Left as the initial value until
+      // inheritance carries computed values rather than specified ones.
       styles[property] = declarations[property].INITIAL;
       styles[property].specificity = 0;
     }
