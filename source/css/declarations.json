@@ -51,7 +51,10 @@
 			"end",
 			"justify",
 			"match-parent",
-			"-webkit-match-parent"
+			"-webkit-match-parent",
+			"-webkit-left",
+			"-webkit-center",
+			"-webkit-right"
 		],
 		"inherited": true
 	},
