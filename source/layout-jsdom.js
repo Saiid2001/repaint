@@ -252,6 +252,15 @@ var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
 
   resolveFontSize(styles, parentStyle, style.fontSize);
 
+  // Properties the layout has no model for, carried verbatim for whoever
+  // paints the boxes. A transform does not affect layout — CSS transforms 2
+  // §3 — so nothing here needs it, but a box drawn without one is in the
+  // wrong place, and the declaration is only cheap to read here.
+  styles.unsupported = {
+    transform: style.transform || "",
+    transformOrigin: style.transformOrigin || "",
+  };
+
   return styles;
 };
 
