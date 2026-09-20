@@ -239,12 +239,16 @@ var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
           styles[key] = value;
         }
       }
-    } else if (declarations[property]) {
+    } else if (declarations[property] && !styles[property]) {
       // An inherited property with no declaration of its own should take the
       // parent's computed value rather than the initial one, but the parent's
       // value can still hold a relative unit, and re-resolving it here reaches
       // for a conversion the box does not have. Left as the initial value until
       // inheritance carries computed values rather than specified ones.
+      //
+      // Only where nothing has been written yet: a longhand the style object
+      // does not carry is still set by its shorthand, and this would take that
+      // back — a gap declared as a pair leaves row-gap and column-gap at zero.
       styles[property] = declarations[property].INITIAL;
       styles[property].specificity = 0;
     }
