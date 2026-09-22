@@ -21,6 +21,132 @@ var Inline = values.Keyword.Inline;
 var LineBreak = values.Keyword.LineBreak;
 var InlineBlock = values.Keyword.InlineBlock;
 
+// CSS values 3 §8: calc() is an expression, and the parsers below take only
+// literals — a declaration holding one was dropped and the box fell back to
+// its initial value. iana.org sizes the box inside its sidebar with
+// calc(250px - 25px); with no width it measured 2px, which left the sidebar
+// itself with none and painted it over the article beside it.
+//
+// Resolved here only where every term is an absolute length or a plain
+// number. A percentage or a font relative unit needs a containing block or a
+// font this does not have, and is left alone rather than guessed at.
+var ABSOLUTE_UNITS = {
+  px: 1, in: 96, cm: 96 / 2.54, mm: 96 / 25.4, q: 96 / 101.6, pt: 96 / 72, pc: 16,
+};
+
+function evaluateExpression(text) {
+  var tokens = text.match(/\d*\.?\d+[a-z%]*|[-+*/()]/gi);
+
+  if (!tokens) return null;
+
+  var at = 0;
+  var peek = function () { return tokens[at]; };
+  var next = function () { return tokens[at++]; };
+
+  var expression = function () {
+    var left = term();
+
+    while (left !== null && (peek() === "+" || peek() === "-")) {
+      var operator = next();
+      var right = term();
+
+      if (right === null) return null;
+
+      left = operator === "+" ? left + right : left - right;
+    }
+
+    return left;
+  };
+
+  var term = function () {
+    var left = primary();
+
+    while (left !== null && (peek() === "*" || peek() === "/")) {
+      var operator = next();
+      var right = primary();
+
+      if (right === null || (operator === "/" && right === 0)) return null;
+
+      left = operator === "*" ? left * right : left / right;
+    }
+
+    return left;
+  };
+
+  var primary = function () {
+    var token = next();
+
+    if (token === "(") {
+      var inner = expression();
+
+      return inner !== null && next() === ")" ? inner : null;
+    }
+
+    if (token === "-") {
+      var negated = primary();
+
+      return negated === null ? null : -negated;
+    }
+
+    if (token === "+") return primary();
+
+    var parts = /^(\d*\.?\d+)([a-z%]*)$/i.exec(token || "");
+
+    if (!parts) return null;
+
+    var unit = parts[2].toLowerCase();
+
+    if (!unit) return parseFloat(parts[1]);
+    if (ABSOLUTE_UNITS[unit] === undefined) return null;
+
+    return parseFloat(parts[1]) * ABSOLUTE_UNITS[unit];
+  };
+
+  var result = expression();
+
+  return at === tokens.length && result !== null && isFinite(result) ? result : null;
+}
+
+function resolveCalc(value) {
+  var text = String(value);
+
+  if (!/calc\(/i.test(text)) return value;
+
+  for (var guard = 0; guard < 8 && /calc\(/i.test(text); guard++) {
+    var start = text.search(/calc\(/i);
+    var open = text.indexOf("(", start);
+    var depth = 0;
+    var end = -1;
+
+    for (var i = open; i < text.length; i++) {
+      if (text[i] === "(") depth++;
+      else if (text[i] === ")" && --depth === 0) { end = i; break; }
+    }
+
+    if (end === -1) return value;
+
+    var inner = text.slice(open + 1, end);
+
+    // A nested calc is resolved first, and left alone if it cannot be.
+    if (/calc\(/i.test(inner)) {
+      var resolvedInner = resolveCalc(inner);
+
+      if (resolvedInner === inner) return value;
+
+      text = text.slice(0, open + 1) + resolvedInner + text.slice(end);
+      continue;
+    }
+
+    var pixels = evaluateExpression(inner);
+
+    if (pixels === null) return value;
+
+    text = text.slice(0, start) + (Math.round(pixels * 1000) / 1000) + "px" + text.slice(end + 1);
+  }
+
+  return text;
+}
+
 var isInlineLevelBox = function (box) {
   return (
     box instanceof InlineBox ||
@@ -222,7 +348,7 @@ var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
             continue;
           }
 
-          var value = declarations[key].parseValue(expanded[key], parentStyle);
+          var value = declarations[key].parseValue(resolveCalc(expanded[key]), parentStyle);
           if (!value) {
             console.warn(
               "CSS Mapping: Unknown value for property: " +
