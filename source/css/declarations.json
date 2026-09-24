@@ -58,6 +58,14 @@
 		],
 		"inherited": true
 	},
+	"direction": {
+		"initial": "ltr",
+		"values": [
+			"ltr",
+			"rtl"
+		],
+		"inherited": true
+	},
 	"color": {
 		"initial": "#000000",
 		"values": [
