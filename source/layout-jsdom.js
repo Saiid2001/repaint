@@ -4,6 +4,12 @@ var values = require("./css/values");
 var declarations = require("./css/declarations");
 var expand = require("./css/expand-shorthand");
 var Viewport = require("./layout/viewport");
+
+// The node types by their values rather than through the global Node, which is
+// a window's and not a worker's: this file is handed a jsdom tree and runs
+// wherever that tree was built. The numbers are fixed by the DOM standard.
+var ELEMENT_NODE = 1;
+var TEXT_NODE = 3;
 var BlockBox = require("./layout/block-box");
 var LineBox = require("./layout/line-box");
 var LineBreakBox = require("./layout/line-break-box");
@@ -430,7 +436,7 @@ var build = function (parent, nodes) {
   for (var node of nodes) {
     let box;
 
-    if (node.nodeType === Node.ELEMENT_NODE) {
+    if (node.nodeType === ELEMENT_NODE) {
       const window =
         node.ownerDocument.defaultView || node.ownerDocument.parentWindow;
       var style = window.getComputedStyle(node);
@@ -464,7 +470,7 @@ var build = function (parent, nodes) {
           build(box, node.childNodes);
         }
       }
-    } else if (node.nodeType === Node.TEXT_NODE) {
+    } else if (node.nodeType === TEXT_NODE) {
       box = new TextBox(parent, node.data);
       bindDOMAndLayoutNode(node, box);
     }
