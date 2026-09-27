@@ -214,7 +214,10 @@ ParentBox.prototype.visibleWidth = function () {
 ParentBox.prototype.visibleHeight = function () {
   if (
     !this.cached_computes["visibleHeight"] ||
-    this.renderIteration != this.cached_computes["visibleWidth"].i
+    // Its own entry, not the width's: a box whose height was computed and
+    // whose width never was has nothing to read an iteration off, and asking
+    // threw rather than recomputing.
+    this.renderIteration != this.cached_computes["visibleHeight"].i
   ) {
     var min = function (box) {
       return box.position.y - box.topWidth();
