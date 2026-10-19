@@ -392,9 +392,18 @@ var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
   // paints the boxes. A transform does not affect layout — CSS transforms 2
   // §3 — so nothing here needs it, but a box drawn without one is in the
   // wrong place, and the declaration is only cheap to read here.
+  //
+  // The background layers below the colour are here for the same reason: a
+  // background image does not change where a box sits, and the only other way
+  // to reach one is a getComputedStyle per box from whoever paints it — which
+  // runs the whole cascade again, where this declaration is already in hand.
   styles.unsupported = {
     transform: style.transform || "",
     transformOrigin: style.transformOrigin || "",
+    backgroundImage: style.backgroundImage || "",
+    backgroundSize: style.backgroundSize || "",
+    backgroundPosition: style.backgroundPosition || "",
+    backgroundRepeat: style.backgroundRepeat || "",
   };
 
   return styles;
