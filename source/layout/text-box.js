@@ -158,7 +158,13 @@ TextBox.prototype.layout = function (offset, line) {
     rest = this.text.slice(text.original.length + 1);
   }
 
-  if (this.text.charAt(text.length) === NEWLINE) this.preservedNewline = true;
+  // The character after the part placed on this line, the offset `rest` is
+  // sliced from above. A TextString carries no `length`, so reading one off it
+  // tested index 0 instead, and a box whose placed text was non-empty never
+  // recorded the newline that follows it.
+  if (this.text.charAt(text.original.length) === NEWLINE) {
+    this.preservedNewline = true;
+  }
 
   if (rest || isMultiline) {
     var textBox = rest === this.text ? null : new TextBox(style, rest);
