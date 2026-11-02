@@ -429,6 +429,11 @@ var bindDOMAndLayoutNode = function (domNode, layoutNode) {
 const IGNORE_CHILDREN = {
   SELECT: true,
   OPTION: true,
+  // A textarea's child text is its default value, not content to lay out: the
+  // control draws it itself. Laid out, it also split the control's own box
+  // across the lines the text wrapped onto, and the renderer built a widget for
+  // each of them -- a second textarea drawn beside the first.
+  TEXTAREA: true,
   SCRIPT: true,
   STYLE: true,
   // Scripting is enabled here, so a noscript element's contents are not markup
