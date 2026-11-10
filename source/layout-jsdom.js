@@ -33,9 +33,12 @@ var InlineBlock = values.Keyword.InlineBlock;
 // calc(250px - 25px); with no width it measured 2px, which left the sidebar
 // itself with none and painted it over the article beside it.
 //
-// Resolved here only where every term is an absolute length or a plain
-// number. A percentage or a font relative unit needs a containing block or a
-// font this does not have, and is left alone rather than guessed at.
+// Resolved here only where every term is an absolute length, a root em or a
+// plain number. The root font size is known before any box is built; a
+// percentage or an em needs a containing block or a font this does not have,
+// and is left alone rather than guessed at. Codex sizes its icons
+// `calc(1rem + 4px)`, and unresolved the icon box had no size and the SVG in
+// it, 100% of that, was laid out as wide as the search field.
 var ABSOLUTE_UNITS = {
   px: 1, in: 96, cm: 96 / 2.54, mm: 96 / 25.4, q: 96 / 101.6, pt: 96 / 72, pc: 16,
 };
@@ -103,6 +106,7 @@ function evaluateExpression(text) {
     var unit = parts[2].toLowerCase();
 
     if (!unit) return parseFloat(parts[1]);
+    if (unit === "rem") return parseFloat(parts[1]) * rootFontSize;
     if (ABSOLUTE_UNITS[unit] === undefined) return null;
 
     return parseFloat(parts[1]) * ABSOLUTE_UNITS[unit];
@@ -307,6 +311,16 @@ var computeRootFontSize = function (body) {
   return px === null || !isFinite(px) ? DEFAULT_FONT_SIZE : px;
 };
 
+// CSS Display 3 §2: "flow-root" generates a block box that establishes a new
+// block formatting context. No formatting context is modelled here, so the box
+// it generates is a block's. Unparsed it fell to the initial "inline", and an
+// element meant to stand on a line of its own was laid out inside the line
+// around it — every heading on Wikipedia, which sets h1-h6 to flow-root.
+var DISPLAY_ALIASES = { "flow-root": "block" };
+
+// The block-level display each inline-level one becomes when blockified.
+var BLOCKIFIED_DISPLAY = { inline: "block", "inline-block": "block", "inline-grid": "grid" };
+
 var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
   var styles = {};
 
@@ -354,7 +368,10 @@ var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
             continue;
           }
 
-          var value = declarations[key].parseValue(resolveCalc(expanded[key]), parentStyle);
+          var specified = key === "display"
+            ? DISPLAY_ALIASES[wide] || expanded[key]
+            : expanded[key];
+          var value = declarations[key].parseValue(resolveCalc(specified), parentStyle);
           if (!value) {
             console.warn(
               "CSS Mapping: Unknown value for property: " +
@@ -386,6 +403,21 @@ var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
     }
   }
 
+  // CSS 2.1 §9.7: an absolutely positioned box is blockified — its inline
+  // display computes to the block one. Left inline, it was laid out inside an
+  // anonymous line of its parent, which is then what everything inside it was
+  // measured against: lichess's `<cg-board>`, an unknown element made absolute
+  // and 100% of the board, came out with no height and its pieces stacked.
+  var position = styles.position && styles.position.keyword;
+  var blockified = (position === "absolute" || position === "fixed") &&
+    styles.display && BLOCKIFIED_DISPLAY[styles.display.keyword];
+
+  if (blockified) {
+    var specificity = styles.display.specificity;
+    styles.display = declarations.display.parseValue(blockified);
+    styles.display.specificity = specificity;
+  }
+
   resolveFontSize(styles, parentStyle, style.fontSize);
 
   // Properties the layout has no model for, carried verbatim for whoever
@@ -404,6 +436,12 @@ var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
     backgroundSize: style.backgroundSize || "",
     backgroundPosition: style.backgroundPosition || "",
     backgroundRepeat: style.backgroundRepeat || "",
+    // CSS Masking 1 §6, with the -webkit- forms Chrome still answers to and
+    // pages still write first.
+    maskImage: style.getPropertyValue("mask-image") || style.getPropertyValue("-webkit-mask-image") || "",
+    maskSize: style.getPropertyValue("mask-size") || style.getPropertyValue("-webkit-mask-size") || "",
+    maskPosition: style.getPropertyValue("mask-position") || style.getPropertyValue("-webkit-mask-position") || "",
+    maskRepeat: style.getPropertyValue("mask-repeat") || style.getPropertyValue("-webkit-mask-repeat") || "",
   };
 
   return styles;

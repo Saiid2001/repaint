@@ -179,7 +179,28 @@ var Color = define(function(red, green, blue, alpha) {
 
 Color.TYPE = '<color>';
 
+// CSS Color 4 §6.2: the system colours, as Chromium resolves them in a light
+// colour scheme. The user agent stylesheet paints every control with them, and
+// unparsed they fell to the initial transparent: an unstyled button had no face.
+var SYSTEM_COLORS = {
+	buttonface: [239, 239, 239],
+	buttontext: [0, 0, 0],
+	buttonborder: [118, 118, 118],
+	field: [255, 255, 255],
+	fieldtext: [0, 0, 0],
+	canvas: [255, 255, 255],
+	canvastext: [0, 0, 0],
+	linktext: [0, 0, 238],
+	visitedtext: [85, 26, 139],
+	activetext: [255, 0, 0],
+	mark: [255, 255, 0],
+	marktext: [0, 0, 0],
+};
+
 Color.parse = function(str) {
+	var system = SYSTEM_COLORS[String(str).trim().toLowerCase()];
+	if(system) return new Color(system[0], system[1], system[2], 1);
+
 	var rgba = parseColor(str).rgba;
 	if(rgba) return new Color(rgba[0], rgba[1], rgba[2], rgba[3]);
 	if(str === 'transparent') return Color(0, 0, 0, 0);
