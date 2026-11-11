@@ -360,7 +360,7 @@
 		"inherited": false
 	},
 	"position": {
-		"initial": "relative",
+		"initial": "static",
 		"values": [
 			"static",
 			"relative",
