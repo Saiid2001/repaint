@@ -331,8 +331,12 @@ var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
     allproperties[key] = true;
   }
 
-  for (var key in style._values) {
-    allproperties[key] = true;
+  // Every property the declaration lists, which is where a shorthand cssstyle
+  // does not expand itself (inset, place-items, border-radius...) is found and
+  // handed to expand() below. Read through the CSSOM's indices, not cssstyle's
+  // private value store, whose shape is not an interface.
+  for (var i = 0; i < style.length; i++) {
+    allproperties[style[i]] = true;
   }
 
   for (var property in allproperties) {
