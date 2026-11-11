@@ -491,6 +491,14 @@ const IGNORE_CHILDREN = {
   LINK: true,
 }
 
+// A declaration with nothing in it, read as a computed style is.
+var EMPTY_DECLARATION = {
+  length: 0,
+  getPropertyValue: function () {
+    return "";
+  },
+};
+
 var build = function (parent, nodes) {
   for (var node of nodes) {
     let box;
@@ -498,8 +506,16 @@ var build = function (parent, nodes) {
     if (node.nodeType === ELEMENT_NODE) {
       const window =
         node.ownerDocument.defaultView || node.ownerDocument.parentWindow;
-      var style = window.getComputedStyle(node);
-      style = parseStylesFromCSSStyleDeclaration(style, parent?.style);
+      // A style that cannot be computed lays this element out with initial
+      // values, inherited ones from its parent, instead of ending the layout
+      // of the whole document at it.
+      var style;
+      try {
+        style = parseStylesFromCSSStyleDeclaration(window.getComputedStyle(node), parent?.style);
+      } catch (error) {
+        console.warn("Style of <" + node.localName + "> could not be computed: " + (error && error.message));
+        style = parseStylesFromCSSStyleDeclaration(EMPTY_DECLARATION, parent?.style);
+      }
       var display = style.display;
 
       if (None.is(display)) {
