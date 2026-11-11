@@ -17,6 +17,7 @@ var InlineBox = require("./layout/inline-box");
 var InlineBlockBox = require("./layout/inline-block-box");
 var TextBox = require("./layout/text-box");
 var sharedRootFontSize = require("./layout/root-font-size");
+var viewportUnits = require("./layout/viewport-units");
 var ImageBox = require("./layout/image-box");
 const { implSymbol } = require("jsdom");
 
@@ -107,6 +108,7 @@ function evaluateExpression(text) {
 
     if (!unit) return parseFloat(parts[1]);
     if (unit === "rem") return parseFloat(parts[1]) * rootFontSize;
+    if (viewportUnits.is(unit)) return viewportUnits.toPx(parseFloat(parts[1]), unit);
     if (ABSOLUTE_UNITS[unit] === undefined) return null;
 
     return parseFloat(parts[1]) * ABSOLUTE_UNITS[unit];
@@ -250,6 +252,7 @@ var lengthToPx = function (value, relativeTo) {
     if (value.unit === "px") return value.length;
     if (value.unit === "em") return value.length * relativeTo;
     if (value.unit === "rem") return value.length * rootFontSize;
+    if (viewportUnits.is(value.unit)) return viewportUnits.toPx(value.length, value.unit);
   }
 
   return null;
@@ -598,6 +601,7 @@ module.exports = function (body, viewport) {
   // both toPx implementations, which have no other way to reach <html>.
   rootFontSize = computeRootFontSize(body);
   sharedRootFontSize.set(rootFontSize);
+  viewportUnits.set(viewport.dimensions);
 
   viewport = new Viewport(viewport.position, viewport.dimensions);
 

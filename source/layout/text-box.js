@@ -9,6 +9,7 @@ var Box = require("./box");
 var ParentBox = require("./parent-box");
 var Viewport = require("./viewport");
 var rootFontSize = require("./root-font-size");
+var viewportUnits = require("./viewport-units");
 var textMeasure = require("./text-measure");
 const ImageBox = require("./image-box");
 
@@ -276,6 +277,8 @@ TextBox.prototype.toPx = function (value, label) {
       const rootValue = rootFontSize.get();
 
       px = value.length * rootValue;
+    } else if (viewportUnits.is(value.unit)) {
+      px = viewportUnits.toPx(value.length, value.unit);
     } else if (value.unit !== "px") {
       throw new Error("Unsupported unit: " + value.unit);
     }

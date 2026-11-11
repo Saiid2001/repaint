@@ -4,6 +4,7 @@ var Box = require("./box");
 var compute = require("../css/compute");
 var values = require("../css/values");
 var rootFontSize = require("./root-font-size");
+var viewportUnits = require("./viewport-units");
 
 var Auto = values.Keyword.Auto;
 var Percentage = values.Percentage;
@@ -360,6 +361,8 @@ ParentBox.prototype.toPx = function (value, label) {
         const rootValue = rootFontSize.get();
 
         px = value.length * rootValue;
+      } else if (viewportUnits.is(value.unit)) {
+        px = viewportUnits.toPx(value.length, value.unit);
       } else {
         throw new Error("Unsupported unit: " + value);
       }
