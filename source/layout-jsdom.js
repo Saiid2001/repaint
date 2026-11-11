@@ -324,28 +324,38 @@ var DISPLAY_ALIASES = { "flow-root": "block" };
 // The block-level display each inline-level one becomes when blockified.
 var BLOCKIFIED_DISPLAY = { inline: "block", "inline-block": "block", "inline-grid": "grid" };
 
+// Every property repaint has a declaration for, in declaration order. Built
+// once: the set is the same for every element.
+var DECLARED_PROPERTIES = Object.keys(declarations);
+
 var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
   var styles = {};
 
-  // join the set of keys from declarations and style
-  var allproperties = {};
+  // Every property repaint declares, then every other one the declaration
+  // lists, which is where a shorthand cssstyle does not expand itself (inset,
+  // place-items, border-radius...) is found and handed to expand() below. Read
+  // through the CSSOM's indices, not cssstyle's private value store, whose
+  // shape is not an interface.
+  var allproperties = DECLARED_PROPERTIES.slice();
+  var listed = {};
 
-  for (var key in declarations) {
-    allproperties[key] = true;
-  }
-
-  // Every property the declaration lists, which is where a shorthand cssstyle
-  // does not expand itself (inset, place-items, border-radius...) is found and
-  // handed to expand() below. Read through the CSSOM's indices, not cssstyle's
-  // private value store, whose shape is not an interface.
   for (var i = 0; i < style.length; i++) {
-    allproperties[style[i]] = true;
+    var name = style[i];
+
+    if (!declarations[name] && !listed[name]) {
+      listed[name] = true;
+      allproperties.push(name);
+    }
   }
 
-  for (var property in allproperties) {
+  for (var p = 0; p < allproperties.length; p++) {
+    var property = allproperties[p];
+    // Read once: each read of a computed style goes through the declaration's
+    // getter, and this runs for every property of every element.
+    var raw = style[property];
 
-    if (style[property]) {
-      var expanded = expand(property, style[property]);
+    if (raw) {
+      var expanded = expand(property, raw);
       var wasShorthand = Object.keys(expanded).length > 1;
       var specificity = wasShorthand ? 1 : 2;
       for (var key in expanded) {
