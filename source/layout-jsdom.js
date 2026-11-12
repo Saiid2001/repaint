@@ -328,6 +328,17 @@ var BLOCKIFIED_DISPLAY = { inline: "block", "inline-block": "block", "inline-gri
 // once: the set is the same for every element.
 var DECLARED_PROPERTIES = Object.keys(declarations);
 
+// What the style pass could not map, each reported once per layout pass:
+// reported per element, a long page printed the same handful of names some
+// 137,000 times.
+var reported = new Set();
+var warnOnce = function (message) {
+  if (!reported.has(message)) {
+    reported.add(message);
+    console.warn(message);
+  }
+};
+
 var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
   var styles = {};
 
@@ -361,7 +372,7 @@ var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
       for (var key in expanded) {
         if (!styles[key] || styles[key].specificity < specificity) {
           if (!declarations[key]) {
-            console.warn("CSS Mapping: Unknown property: " + key);
+            warnOnce("CSS Mapping: Unknown property: " + key);
             continue;
           }
 
@@ -390,7 +401,7 @@ var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
             : expanded[key];
           var value = declarations[key].parseValue(resolveCalc(specified), parentStyle);
           if (!value) {
-            console.warn(
+            warnOnce(
               "CSS Mapping: Unknown value for property: " +
                 key +
                 " = " +
@@ -622,6 +633,7 @@ var lines = function (parent, boxes) {
 
 module.exports = function (body, viewport) {
   layoutPass++;
+  reported.clear();
 
   // Published before anything is laid out: rem lengths resolve against it in
   // both toPx implementations, which have no other way to reach <html>.
