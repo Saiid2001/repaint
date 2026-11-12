@@ -376,5 +376,10 @@ ParentBox.prototype.toPx = function (value, label) {
   return this.cached_computes[label].px;
 };
 
+// Every box resolves its own lengths: the renderer asks a line break for its
+// line height as it asks any element. A box with a resolution of its own (a
+// run of text) keeps it.
+Box.prototype.toPx = ParentBox.prototype.toPx;
+
 module.exports = ParentBox;
 module.exports.replaceDomLayoutBindings = replaceDomLayoutBindings;
