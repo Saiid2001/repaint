@@ -79,20 +79,36 @@ InlineBox.prototype._layoutPosition = function(offset) {
 	this.position.y = this.baseline - size + this._textHeight().descent;
 };
 
-InlineBox.prototype._layoutChildren = function(line) {
+// What an inline-block holds is block content (CSS 2.1 9.2.1): line boxes and
+// block boxes, stacked. It offers them the width its containing block offers,
+// and is as wide as the widest of them: shrink-to-fit without a preferred
+// width, which the renderer's own layout settles.
+InlineBox.prototype._layoutChildren = function() {
 	var offset = { width: 0, height: 0 };
+	var widest = 0;
+
+	var container = this.parent;
+	while (container && !(container.dimensions && container.dimensions.width > 0 && !container.isInlineLevel)) {
+		container = container.parent;
+	}
+	this.dimensions.width = container ? container.dimensions.width : 0;
 
 	this.forEach(function(child) {
-		child.layout(offset, line);
-		offset.width += child.width();
+		child.layout(offset);
+		offset.height += child.height();
+		widest = Math.max(widest, child.width());
 	});
 
-	this.dimensions.width = offset.width;
+	this.dimensions.width = widest;
+	this.dimensions.height = offset.height;
 };
 
 InlineBox.prototype._layoutHeight = function() {
-	this.dimensions.height = this.toPx(this.style['font-size'], 'fontSize');
+	// Set by _layoutChildren, from what it holds.
 };
+
+// An inline-block is laid out whole within its line: see LineBox._layoutHeight.
+InlineBox.prototype.isAtomicInline = true;
 
 InlineBox.prototype._layoutBaseline = function() {
 	var parent = this.parent;

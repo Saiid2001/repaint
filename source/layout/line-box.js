@@ -86,9 +86,19 @@ LineBox.prototype._layoutHeight = function() {
 	var maxY = minY + this._lineHeight();
 
 	var height = function(parent) {
+		// A block box has no line position: it is what an inline-block holds,
+		// and the inline-block is measured whole.
+		if(typeof parent.linePosition !== 'function') return;
+
 		var position = parent.linePosition();
 
 		minY = Math.min(minY, position.y);
+
+		if(parent.isAtomicInline) {
+			maxY = Math.max(maxY, position.y + parent.lineHeight(), parent.position.y + parent.height());
+			return;
+		}
+
 		maxY = Math.max(maxY, position.y + parent.lineHeight());
 		if(parent.children) parent.children.forEach(height);
 	};

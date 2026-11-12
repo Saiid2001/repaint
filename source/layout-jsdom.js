@@ -169,10 +169,12 @@ var isInlineLevelBox = function (box) {
   );
 };
 
+// An inline-block is inline-level outside and a block container inside (CSS 2.1
+// 9.2.1): what it holds is never split out of it, as an inline's block-level
+// children are, and its own inline content is set in lines of its own.
 var isInlineContainerBox = function (box) {
   return (
     box instanceof InlineBox ||
-    box instanceof InlineBlockBox ||
     box instanceof LineBox
   );
 };
@@ -187,7 +189,7 @@ var isBlockLevelBox = function (box) {
 };
 
 var isBlockContainerBox = function (box) {
-  return box instanceof Viewport || box instanceof BlockBox;
+  return box instanceof Viewport || box instanceof BlockBox || box instanceof InlineBlockBox;
 };
 
 var branch = function (ancestor, descedant) {
