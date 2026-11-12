@@ -4,6 +4,7 @@ var camelize = require('camelize');
 var parseColor = require('parse-color');
 
 var declarations = require('./declarations.json');
+var calc = require('../layout/calc');
 
 var VALUE_WITH_UNIT = /^([+-]?\d*[\.]?\d+)(\%|\w+)$/
 var NUMBER = /^[+-]?\d*[\.]?\d+$/;
@@ -93,6 +94,14 @@ Length.TYPE = '<length>';
 Length.UNITS = ['px', 'em', 'rem'].concat(require('../layout/viewport-units').UNITS, require('../layout/container-units').UNITS);
 
 Length.parse = function(str) {
+	// A math function stays an expression, evaluated against the box it is
+	// laid out in: see layout/calc.js.
+	if(calc.is(str)) {
+		var expression = new Length(NaN, 'calc');
+		expression.expression = String(str).trim();
+		return expression;
+	}
+
 	var match = str.match(VALUE_WITH_UNIT);
 	if(!match) {
 		if(str !== '0') return;
@@ -125,7 +134,7 @@ Length.rem = function(length) {
 
 Length.prototype.type = Length.TYPE;
 Length.prototype.toString = function() {
-	return this.length + this.unit;
+	return this.unit === 'calc' ? this.expression : this.length + this.unit;
 };
 
 var Percentage = define(function(percentage) {

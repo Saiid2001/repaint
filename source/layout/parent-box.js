@@ -2,6 +2,7 @@ var util = require("util");
 
 var Box = require("./box");
 var containerUnits = require("./container-units");
+var calc = require("./calc");
 var compute = require("../css/compute");
 var values = require("../css/values");
 var rootFontSize = require("./root-font-size");
@@ -327,6 +328,23 @@ ParentBox.prototype.toPx = function (value, label) {
 
         px = (basis * value.percentage) / 100;
       }
+    } else if (Length.is(value) && value.unit === "calc") {
+      // Each term is resolved as a value of this property on its own; the
+      // cache is per property, not per value, so it is set aside meanwhile.
+      var self = this;
+      px = calc.evaluate(value.expression, function (number, unit) {
+        var term = unit === "%" ? Percentage(number) : Length(number, unit);
+        var held = self.cached_computes[label];
+
+        delete self.cached_computes[label];
+
+        try {
+          return self.toPx(term, label);
+        } finally {
+          if (held) self.cached_computes[label] = held;
+          else delete self.cached_computes[label];
+        }
+      });
     } else if (Length.is(value)) {
       if (value.unit === "px") {
         return value.length;
