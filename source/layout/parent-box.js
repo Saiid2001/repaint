@@ -1,6 +1,7 @@
 var util = require("util");
 
 var Box = require("./box");
+var containerUnits = require("./container-units");
 var compute = require("../css/compute");
 var values = require("../css/values");
 var rootFontSize = require("./root-font-size");
@@ -363,6 +364,8 @@ ParentBox.prototype.toPx = function (value, label) {
         px = value.length * rootValue;
       } else if (viewportUnits.is(value.unit)) {
         px = viewportUnits.toPx(value.length, value.unit);
+      } else if (containerUnits.is(value.unit)) {
+        px = containerUnits.toPx(this, value.length, value.unit);
       } else {
         throw new Error("Unsupported unit: " + value);
       }

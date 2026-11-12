@@ -90,7 +90,7 @@ var Length = define(function(length, unit) {
 });
 
 Length.TYPE = '<length>';
-Length.UNITS = ['px', 'em', 'rem'].concat(require('../layout/viewport-units').UNITS);
+Length.UNITS = ['px', 'em', 'rem'].concat(require('../layout/viewport-units').UNITS, require('../layout/container-units').UNITS);
 
 Length.parse = function(str) {
 	var match = str.match(VALUE_WITH_UNIT);
