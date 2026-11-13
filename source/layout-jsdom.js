@@ -293,6 +293,38 @@ var resolveFontSize = function (styles, parentStyles, specified) {
 };
 
 /**
+ * A line-height's computed value is a number or an absolute length: a length
+ * or percentage is resolved against the element's own font-size, and that is
+ * what its descendants inherit — not the factor, against fonts of their own.
+ * Left as "1.2em", a 40px heading's lines were resolved against 16px and laid
+ * over one another.
+ */
+var resolveLineHeight = function (styles) {
+  var value = styles["line-height"];
+
+  if (!value || (!values.Percentage.is(value) && !(values.Length.is(value) && value.unit !== "px"))) {
+    return;
+  }
+
+  var fontSize = styles["font-size"];
+  var px = lengthToPx(value, fontSize && values.Length.is(fontSize) ? fontSize.length : DEFAULT_FONT_SIZE);
+
+  if (px === null || !isFinite(px)) {
+    return;
+  }
+
+  var resolved = values.Length.px(px);
+  resolved.specificity = value.specificity;
+  styles["line-height"] = resolved;
+};
+
+// A value object of its own: the specificity the style pass records is set on
+// the value, and a value shared with the parent would take the child's.
+var copyValue = function (value) {
+  return Object.assign(Object.create(Object.getPrototypeOf(value)), value);
+};
+
+/**
  * rem resolves against the root element, which is never laid out because layout
  * starts at <body>. Its own font-size resolves against the 16px initial value.
  */
@@ -391,7 +423,7 @@ var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
             var takesParent = wide === "inherit" ||
               ((wide === "unset" || wide === "revert" || wide === "revert-layer") &&
                 declarations[key].INHERITED);
-            var inheritedValue = takesParent && parentStyle ? parentStyle[key] : null;
+            var inheritedValue = takesParent && parentStyle && parentStyle[key] ? copyValue(parentStyle[key]) : null;
 
             styles[key] = inheritedValue || declarations[key].INITIAL;
             styles[key].specificity = specificity;
@@ -419,16 +451,22 @@ var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
         }
       }
     } else if (declarations[property] && !styles[property]) {
-      // An inherited property with no declaration of its own should take the
-      // parent's computed value rather than the initial one, but the parent's
-      // value can still hold a relative unit, and re-resolving it here reaches
-      // for a conversion the box does not have. Left as the initial value until
-      // inheritance carries computed values rather than specified ones.
+      // An inherited property with no declaration of its own takes the
+      // parent's computed value. jsdom resolves inheritance for only a few
+      // properties and reports nothing for the rest, fonts and line-height
+      // among them; given the initial value instead, a page's body font
+      // reached no paragraph and a link in a 40px heading was 16px. The
+      // parent's values are computed ones by now: font-size and line-height
+      // are made absolute below, and the rest carry no unit.
       //
       // Only where nothing has been written yet: a longhand the style object
       // does not carry is still set by its shorthand, and this would take that
       // back — a gap declared as a pair leaves row-gap and column-gap at zero.
-      styles[property] = declarations[property].INITIAL;
+      var inherits = declarations[property].INHERITED && parentStyle && parentStyle[property];
+
+      styles[property] = inherits
+        ? copyValue(parentStyle[property])
+        : declarations[property].INITIAL;
       styles[property].specificity = 0;
     }
   }
@@ -449,6 +487,7 @@ var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
   }
 
   resolveFontSize(styles, parentStyle, style.fontSize);
+  resolveLineHeight(styles);
 
   // Properties the layout has no model for, carried verbatim for whoever
   // paints the boxes. A transform does not affect layout — CSS transforms 2
