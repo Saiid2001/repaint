@@ -121,6 +121,20 @@ BlockBox.prototype._layoutPosition = function (offset) {
 
   this.position.x = parent.position.x + this.leftWidth();
   this.position.y = parent.position.y + offset.height + this.topWidth();
+
+  // A fixed box is placed against the viewport, at the origin of the layout,
+  // where it gives an offset: laid out where it would be in flow, a header
+  // fixed at the top of the page measured as far down as everything before it.
+  // Done before its children are laid out, which take their places from it.
+  if (style.position && style.position.keyword === "fixed") {
+    if (Length.is(style.top)) {
+      this.position.y = this.toPx(style.top, "top") + this.topWidth();
+    }
+
+    if (Length.is(style.left)) {
+      this.position.x = this.toPx(style.left, "left") + this.leftWidth();
+    }
+  }
 };
 
 // CSS 2.1 §10.6.3: a block's auto height is that of its children in normal
