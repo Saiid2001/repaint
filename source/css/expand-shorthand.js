@@ -8,13 +8,51 @@ module.exports = function(name, value) {
 
 	// gap is declared as a single length, so its two value form has to be split
 	// here or the declaration does not parse at all. Row first, column second.
+	//
+	// Split at the spaces outside parentheses only: a function's arguments are
+	// one length, and split at their spaces `clamp(1.25rem, 2vw, 1.75rem)` was
+	// a row gap of "clamp(1.25rem," and dropped.
 	if (name === 'gap' || name === 'grid-gap') {
-		var parts = String(value).trim().split(/\s+/);
+		var parts = [];
+		var depth = 0;
+		var current = '';
+
+		String(value).trim().split('').forEach(function(char) {
+			if (char === '(') depth++;
+			if (char === ')') depth = Math.max(0, depth - 1);
+
+			if (depth === 0 && /\s/.test(char)) {
+				if (current) parts.push(current);
+				current = '';
+			} else {
+				current += char;
+			}
+		});
+
+		if (current) parts.push(current);
 
 		// Only the longhands: a gap of its own would set both gutters and take
 		// the column one back with it.
 		if (parts.length > 1) {
 			return { 'row-gap': parts[0], 'column-gap': parts[1] };
+		}
+
+		return { 'row-gap': parts[0], 'column-gap': parts[0] };
+	}
+
+	// inset is top, right, bottom and left in margin's order, and is not in the
+	// expander's table either: a fixed overlay written `inset: 0` was given no
+	// offsets at all, and came out as small as its content in a corner.
+	if (name === 'inset') {
+		var sides = String(value).trim().split(/\s+(?![^(]*\))/);
+
+		if (sides.length >= 1 && sides.length <= 4) {
+			var top = sides[0];
+			var right = sides[1] !== undefined ? sides[1] : top;
+			var bottom = sides[2] !== undefined ? sides[2] : top;
+			var left = sides[3] !== undefined ? sides[3] : right;
+
+			return { top: top, right: right, bottom: bottom, left: left };
 		}
 	}
 
