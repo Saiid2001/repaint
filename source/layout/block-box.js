@@ -123,14 +123,54 @@ BlockBox.prototype._layoutPosition = function (offset) {
   this.position.y = parent.position.y + offset.height + this.topWidth();
 };
 
+// CSS 2.1 §10.6.3: a block's auto height is that of its children in normal
+// flow. An absolutely positioned child is not one; it is laid out where it
+// would have been, and the children after it go where they would without it.
+var OUT_OF_FLOW = { absolute: true, fixed: true };
+
+var isOutOfFlow = function (box) {
+  var position = box.style && box.style.position;
+
+  return Boolean(position && OUT_OF_FLOW[position.keyword]);
+};
+
+// A flex container laying its items out side by side on one line. Its items
+// are not laid out along a row here -- each is a block as wide as the
+// container -- but they start at its top, and it is as tall as the tallest:
+// stacked, a menu bar of seven items was seven items tall.
+BlockBox.prototype._isSingleLineFlexRow = function () {
+  var style = this.style;
+
+  if (!(style.display && style.display.keyword === "flex")) {
+    return false;
+  }
+
+  var direction = style["flex-direction"] && style["flex-direction"].keyword;
+  var wrap = style["flex-wrap"] && style["flex-wrap"].keyword;
+
+  return (!direction || direction === "row" || direction === "row-reverse") &&
+    (!wrap || wrap === "nowrap");
+};
+
 BlockBox.prototype._layoutChildren = function () {
   var offset = { width: 0, height: 0 };
+  var row = this._isSingleLineFlexRow();
+  var tallest = 0;
 
   this.forEach(function (child) {
     child.layout(offset);
-    offset.height += child.height();
+
+    if (isOutOfFlow(child)) {
+      return;
+    }
+
+    if (row) {
+      tallest = Math.max(tallest, child.height());
+    } else {
+      offset.height += child.height();
+    }
   });
-  this.dimensions.height = offset.height;
+  this.dimensions.height = row ? tallest : offset.height;
 };
 
 BlockBox.prototype._layoutHeight = function () {
