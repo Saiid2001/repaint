@@ -19,7 +19,7 @@ var TextBox = require("./layout/text-box");
 var sharedRootFontSize = require("./layout/root-font-size");
 var viewportUnits = require("./layout/viewport-units");
 var ImageBox = require("./layout/image-box");
-const { implSymbol } = require("jsdom");
+const { implSymbol, computedStyle } = require("jsdom");
 
 var None = values.Keyword.None;
 var Auto = values.Keyword.Auto;
@@ -518,6 +518,45 @@ var parseStylesFromCSSStyleDeclaration = function (style, parentStyle) {
 
 var layoutPass = 0;
 
+/*
+A style parsed from a computed style is kept by that computed style and by the
+parent's parsed style, the two things it is parsed from. jsdom hands back the
+same computed style for as long as nothing it is computed from changes, so an
+element whose style did not change is not parsed again: on a long article,
+parsing every element's style was a fifth of every layout pass. The root font
+size and the viewport, which rem and viewport lengths resolve against, start a
+new store when they change. Parsed styles are read, never written, after they
+are made, which is what lets elements and passes share them.
+*/
+var parsedStyles = new WeakMap();
+var parsedAgainst = null;
+// What the body's style is parsed against: the viewport's, which is made
+// again every pass from nothing but the viewport's size.
+var VIEWPORT_PARENT = {};
+
+var parsedStyleOf = function (node, window, parent) {
+  var computed = computedStyle ? computedStyle(node) : window.getComputedStyle(node);
+  var parentKey = parent instanceof Viewport ? VIEWPORT_PARENT : parent && parent.style;
+  var byParent = parsedStyles.get(computed);
+
+  if (!byParent) {
+    byParent = new WeakMap();
+    parsedStyles.set(computed, byParent);
+  }
+
+  var styles = parentKey ? byParent.get(parentKey) : undefined;
+
+  if (!styles) {
+    styles = parseStylesFromCSSStyleDeclaration(computed, parent && parent.style);
+
+    if (parentKey) {
+      byParent.set(parentKey, styles);
+    }
+  }
+
+  return styles;
+};
+
 var bindDOMAndLayoutNode = function (domNode, layoutNode) {
   layoutNode.domRef = domNode;
 
@@ -573,7 +612,7 @@ var build = function (parent, nodes) {
       // of the whole document at it.
       var style;
       try {
-        style = parseStylesFromCSSStyleDeclaration(window.getComputedStyle(node), parent?.style);
+        style = parsedStyleOf(node, window, parent);
       } catch (error) {
         console.warn("Style of <" + node.localName + "> could not be computed: " + (error && error.message));
         style = parseStylesFromCSSStyleDeclaration(EMPTY_DECLARATION, parent?.style);
@@ -681,6 +720,13 @@ module.exports = function (body, viewport) {
   rootFontSize = computeRootFontSize(body);
   sharedRootFontSize.set(rootFontSize);
   viewportUnits.set(viewport.dimensions);
+
+  var against = rootFontSize + ":" + viewport.dimensions.width + ":" + viewport.dimensions.height;
+
+  if (against !== parsedAgainst) {
+    parsedStyles = new WeakMap();
+    parsedAgainst = against;
+  }
 
   viewport = new Viewport(viewport.position, viewport.dimensions);
 
