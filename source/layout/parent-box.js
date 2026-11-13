@@ -385,7 +385,10 @@ ParentBox.prototype.toPx = function (value, label) {
       } else if (containerUnits.is(value.unit)) {
         px = containerUnits.toPx(this, value.length, value.unit);
       } else {
-        throw new Error("Unsupported unit: " + value);
+        // A length this cannot resolve is nothing, as an invalid declaration
+        // would be; thrown, it ended the layout of the whole document.
+        console.warn("Unsupported unit: " + value);
+        px = 0;
       }
     }
     this.cached_computes[label] = {

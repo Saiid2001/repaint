@@ -10,6 +10,8 @@ var ParentBox = require("./parent-box");
 var Viewport = require("./viewport");
 var rootFontSize = require("./root-font-size");
 var viewportUnits = require("./viewport-units");
+var containerUnits = require("./container-units");
+var calc = require("./calc");
 var textMeasure = require("./text-measure");
 const ImageBox = require("./image-box");
 
@@ -256,6 +258,27 @@ TextBox.prototype.toPx = function (value, label) {
       px = (parentPx * value.percentage) / 100;
     } else if (Length.is(value) && value.unit === "px") {
       return value.length;
+    } else if (Length.is(value) && value.unit === "calc") {
+      // As ParentBox resolves it: each term on its own, the cache for this
+      // property set aside meanwhile.
+      var self = this;
+      px = calc.evaluate(value.expression, function (number, unit) {
+        var term = unit === "%" ? Percentage(number) : Length(number, unit);
+        var held = self.cached_computes[label];
+
+        delete self.cached_computes[label];
+
+        try {
+          return self.toPx(term, label);
+        } finally {
+          if (held) self.cached_computes[label] = held;
+          else delete self.cached_computes[label];
+        }
+      });
+    } else if (Length.is(value) && value.unit === "em" && label !== "fontSize") {
+      // Against the text's own font size, which is its element's; only a font
+      // size is relative to the parent's.
+      px = value.length * this.toPx(this.style["font-size"], "fontSize");
     } else if (Length.is(value) && value.unit === "em") {
       // we fix the font size of the grandparent
 
@@ -279,8 +302,13 @@ TextBox.prototype.toPx = function (value, label) {
       px = value.length * rootValue;
     } else if (viewportUnits.is(value.unit)) {
       px = viewportUnits.toPx(value.length, value.unit);
+    } else if (containerUnits.is(value.unit)) {
+      px = containerUnits.toPx(this.parent, value.length, value.unit);
     } else if (value.unit !== "px") {
-      throw new Error("Unsupported unit: " + value.unit);
+      // A length this cannot resolve is nothing, as an invalid declaration
+      // would be; thrown, it ended the layout of the whole document.
+      console.warn("Unsupported unit: " + value.unit);
+      px = 0;
     }
 
     this.cached_computes[label] = {
