@@ -78,6 +78,21 @@ ImageBox.prototype.clone = function(parent) {
 	var clone = new this.constructor(parent, this.style, this.image);
 	if(parent) parent.children.push(clone);
 
+	// The clone stands for the same element, as a parent box's clone does
+	// (ParentBox.prototype.clone). A block inside an inline is laid out by
+	// cloning the boxes around it, and an image's clone that lost its element
+	// was painted under the enclosing block with no element of its own: the
+	// <img> measured 0x0 and nothing could reach it.
+	// Bound the way ParentBox's clone binds it, so cloneWithLinks, which both
+	// share and which binds its clone again, finds the same thing either way.
+	if(this.domRef) {
+		clone.domRef = this.domRef;
+		if(this.domRef.layoutBoxes) {
+			this.domRef.layoutBoxes.pop();
+			this.domRef.layoutBoxes.push(clone);
+		}
+	}
+
 	return clone;
 };
 
