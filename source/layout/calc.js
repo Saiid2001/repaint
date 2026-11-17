@@ -27,15 +27,57 @@ function tokenize(text) {
   return tokens;
 }
 
-exports.FUNCTIONS = ["calc", "min", "max", "clamp"];
+exports.FUNCTIONS = ["calc", "min", "max", "clamp", "env"];
 
 exports.is = function (text) {
-  return /^\s*(calc|min|max|clamp)\(/i.test(String(text));
+  return /^\s*(calc|min|max|clamp|env)\(/i.test(String(text));
 };
+
+// env() (CSS Environment Variables): a safe-area inset is 0, as on a screen with no
+// notch or rounded corner, which is the screen this draws; any other variable takes
+// its fallback, and with none the expression has no value. Substituted before the
+// expression is read, as a browser substitutes it -- Nextcloud's content column is
+// calc(100% - 58px - env(safe-area-inset-bottom)), and read as no value it grew to
+// fit everything, with the Files list two screens below the one in view.
+function substituteEnv(text) {
+  var out = "";
+  var rest = text;
+
+  for (;;) {
+    var match = /env\(/i.exec(rest);
+    if (!match) return out + rest;
+
+    var depth = 1;
+    var i = match.index + match[0].length;
+    var comma = -1;
+
+    for (; i < rest.length && depth > 0; i++) {
+      if (rest[i] === "(") depth++;
+      else if (rest[i] === ")") depth--;
+      else if (rest[i] === "," && depth === 1 && comma < 0) comma = i;
+    }
+
+    if (depth !== 0) return null;
+
+    var inner = rest.slice(match.index + match[0].length, i - 1);
+    var name = (comma < 0 ? inner : rest.slice(match.index + match[0].length, comma)).trim().toLowerCase();
+    var fallback = comma < 0 ? null : rest.slice(comma + 1, i - 1).trim();
+    var value;
+
+    if (/^safe-area-(max-)?inset-(top|right|bottom|left)$/.test(name)) value = "0px";
+    else if (fallback) value = "(" + fallback + ")";
+    else return null;
+
+    out += rest.slice(0, match.index) + value;
+    rest = rest.slice(i);
+  }
+}
 
 // `resolve(number, unit)` gives a length or percentage term in pixels.
 exports.evaluate = function (text, resolve) {
-  var tokens = tokenize(String(text));
+  var substituted = substituteEnv(String(text));
+  if (substituted === null) return NaN;
+  var tokens = tokenize(substituted);
   if (!tokens) return NaN;
 
   var at = 0;
