@@ -9,6 +9,7 @@
 			"inline-block",
 			"list-item",
 			"flex",
+			"inline-flex",
 			"table",
 			"table-row",
 			"table-cell",

@@ -356,7 +356,7 @@ var computeRootFontSize = function (body) {
 var DISPLAY_ALIASES = { "flow-root": "block" };
 
 // The block-level display each inline-level one becomes when blockified.
-var BLOCKIFIED_DISPLAY = { inline: "block", "inline-block": "block", "inline-grid": "grid" };
+var BLOCKIFIED_DISPLAY = { inline: "block", "inline-block": "block", "inline-flex": "flex", "inline-grid": "grid" };
 
 // Every property repaint has a declaration for, in declaration order. Built
 // once: the set is the same for every element.
@@ -633,7 +633,11 @@ var build = function (parent, nodes) {
         box = new BlockBox(parent, style);
       } else if (LineBreak.is(display)) {
         box = new LineBreakBox(parent, style);
-      } else if (InlineBlock.is(display)) {
+      } else if (InlineBlock.is(display) || display.keyword === "inline-flex") {
+        // An inline-flex box is inline-level outside, as an inline-block is,
+        // and keeps what it holds inside one box; its display tells the
+        // renderer to lay that out as a flex container. Unparsed, it fell to
+        // the initial "inline" and was dissolved into the line around it.
         box = new InlineBlockBox(parent, style);
       } else {
         // TODO: implement the rest of display options
